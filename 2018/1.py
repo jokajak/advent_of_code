@@ -10,19 +10,28 @@ __license__ = "MIT"
 import argparse
 
 
+class Destination:
+    frequency = 0
+    freq_frequency = []
+
+    def change(self, delta):
+        self.frequency += delta
+
+
 def main(args):
     """ Main entry point of the app """
+    my_dest = Destination()
     ret = 0
     for line in args.file.readlines():
         line = line.strip()
         action = line[0]
         if ('+' == action):
-            ret += int(line[1:])
+            my_dest.change(int(line[1:]))
         elif ('-' == action):
-            ret -= int(line[1:])
+            my_dest.change(-1 * int(line[1:]))
         else:
             print("Invalid input: {}".format(line))
-    print(ret)
+    print(my_dest.frequency)
 
 
 if __name__ == "__main__":
