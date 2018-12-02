@@ -11,6 +11,8 @@ import argparse
 import logging
 import logzero
 from collections import defaultdict
+from difflib import SequenceMatcher
+from itertools import combinations
 from logzero import logger
 
 
@@ -22,8 +24,11 @@ def main(args):
         logzero.loglevel(logging.DEBUG)
     two_char = 0
     three_char = 0
+    entries = []
+
     for line in args.input.readlines():
         line = line.strip()
+        entries.append(line)
         histogram = defaultdict(int)
         for letter in line:
             histogram[letter] += 1
@@ -41,6 +46,22 @@ def main(args):
     checksum = two_char * three_char
     msg = '{}, {}, {}'.format(two_char, three_char, checksum)
     logger.info(msg)
+
+    for entry in combinations(entries, 2):
+        num_diff = 0
+        solution = ''
+        base, alt = entry
+        for idx, letter in enumerate(base):
+            if (alt[idx] == letter):
+                solution += letter
+                continue
+            elif (alt[idx] != letter):
+                num_diff += 1
+            if (num_diff > 1):
+                break
+        else:
+            logger.info(solution)
+    logger.debug(entry)
 
 
 if __name__ == "__main__":
