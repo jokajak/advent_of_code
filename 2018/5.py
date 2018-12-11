@@ -31,27 +31,39 @@ def purge_pairs(in_str):
     return in_str, out_str
 
 
+def reduce_str(in_str):
+    next_line = ''
+    i = 0
+    while i < len(in_str):
+        in_str, next_line = purge_pairs(in_str)
+        logger.debug(next_line)
+        i += 1
+        if in_str == next_line:
+            break
+        in_str = next_line
+    return next_line
+
+
 def main(args):
     """ Main entry point of the app """
     if (0 == args.verbose):
         logzero.loglevel(logging.INFO)
     elif (1 == args.verbose):
         logzero.loglevel(logging.DEBUG)
-    entries = []
-
+    orig_line = None
     for line in args.input.readlines():
         line = line.strip()
-        next_line = ''
-        i = 0
-        while i < len(line):
-            line, next_line = purge_pairs(line)
-            logger.debug(next_line)
-            i += 1
-            if line == next_line:
-                break
-            line = next_line
+        orig_line = line
+        next_line = reduce_str(line)
     logger.debug(next_line)
     logger.info(len(next_line))
+    min_len = len(next_line)
+    for letter in 'abcdefghijklmnopqrstuvwxyz':
+        new_line = orig_line.replace(letter, '').replace(letter.upper(), '')
+        test_line = reduce_str(new_line)
+        if len(test_line) < min_len:
+            min_len = len(test_line)
+    logger.info(min_len)
 
 
 if __name__ == "__main__":
