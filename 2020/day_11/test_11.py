@@ -6,9 +6,38 @@ __version__ = "0.1.0"
 __license__ = "GPLv3"
 
 import argparse
+import copy
 from collections import Counter
 
 import pytest
+from tqdm import tqdm
+
+OCCUPIED = "#"
+EMPTY = "L"
+
+directions = [
+    (+1, +1),
+    (+1, -1),
+    (+1, 0),
+    (-1, +1),
+    (-1, -1),
+    (-1, 0),
+    (0, +1),
+    (0, -1),
+    ]
+
+
+def get_next_seat(grid, row, column, direction):
+    delta_x, delta_y = direction
+    current_row, current_column = row + delta_y, column + delta_x
+    while (0 <= current_row < len(grid)) and (0 <= current_column < len(grid[row])):
+        if grid[current_row][current_column] == OCCUPIED:
+            return OCCUPIED
+        elif grid[current_row][current_column] == EMPTY:
+            return EMPTY
+        current_row += delta_y
+        current_column += delta_x
+    return EMPTY
 
 
 def count_neighbors(grid, row, column, immediate_neighbors):
@@ -101,83 +130,9 @@ def count_neighbors(grid, row, column, immediate_neighbors):
                 if grid[row-1][column+1] == "#":
                     occupied_neighbors += 1
     else:
-        current_col = [r[row][column] for r in grid]
-        if row == 0:
-            # look down
-            remaining_spots = "".join(current_col[row+1:]).strip(".")
-            if remaining_spots[0] == "#":
+        for direction in directions:
+            if get_next_seat(grid, row, column, direction) == OCCUPIED:
                 occupied_neighbors += 1
-            if column == 0:
-                # look right
-                remaining_spots = "".join(grid[row][column+1:]).strip(".")
-                if remaining_spots[0] == "#":
-                    occupied_neighbors += 1
-            elif column == len(grid[row])-1:
-                # look left
-                remaining_spots = "".join(grid[row][:column-1]).strip(".")
-                if remaining_spots[-1] == "#":
-                    occupied_neighbors += 1
-            else:
-                # look right
-                remaining_spots = "".join(grid[row][column+1:]).strip(".")
-                if remaining_spots[0] == "#":
-                    occupied_neighbors += 1
-                # look left
-                remaining_spots = "".join(grid[row][:column-1]).strip(".")
-                if remaining_spots[-1] == "#":
-                    occupied_neighbors += 1
-        elif row == len(grid)-1:
-            # look up
-            remaining_spots = "".join(current_col[:row-1]).strip(".")
-            if remaining_spots[-1] == "#":
-                occupied_neighbors += 1
-            if column == 0:
-                # look right
-                remaining_spots = "".join(grid[row][column+1:]).strip(".")
-                if remaining_spots[0] == "#":
-                    occupied_neighbors += 1
-            elif column == len(grid[row])-1:
-                # look left
-                remaining_spots = "".join(grid[row][:column-1]).strip(".")
-                if remaining_spots[-1] == "#":
-                    occupied_neighbors += 1
-            else:
-                # look right
-                remaining_spots = "".join(grid[row][column+1:]).strip(".")
-                if remaining_spots[0] == "#":
-                    occupied_neighbors += 1
-                # look left
-                remaining_spots = "".join(grid[row][:column-1]).strip(".")
-                if remaining_spots[-1] == "#":
-                    occupied_neighbors += 1
-        else:
-            # look down
-            remaining_spots = "".join(current_col[row+1:]).strip(".")
-            if remaining_spots[0] == "#":
-                occupied_neighbors += 1
-            # look up
-            remaining_spots = "".join(current_col[:row-1]).strip(".")
-            if remaining_spots[-1] == "#":
-                occupied_neighbors += 1
-            if column == 0:
-                # look right
-                remaining_spots = "".join(grid[row][column+1:]).strip(".")
-                if remaining_spots[0] == "#":
-                    occupied_neighbors += 1
-            elif column == len(grid[row])-1:
-                # look left
-                remaining_spots = "".join(grid[row][:column-1]).strip(".")
-                if remaining_spots[-1] == "#":
-                    occupied_neighbors += 1
-            else:
-                # look right
-                remaining_spots = "".join(grid[row][column+1:]).strip(".")
-                if remaining_spots[0] == "#":
-                    occupied_neighbors += 1
-                # look left
-                remaining_spots = "".join(grid[row][:column-1]).strip(".")
-                if remaining_spots[-1] == "#":
-                    occupied_neighbors += 1
     return occupied_neighbors
 
 
@@ -226,15 +181,28 @@ def main(args):
         line = line.strip("\n")
         row = list(line)
         rows.append(row)
-    current_grid = rows
+    current_grid = copy.deepcopy(rows)
     seen_grids = set()
     max_attempts = 100
     for _attempt in range(max_attempts):
         next_grid = evolve_grid(current_grid)
-        if str(next_grid) in seen_grids:
+        if str(next_grid) in seen_grids or next_grid == current_grid:
             break
         current_grid = next_grid
         print(_attempt)
+    occupied = Counter()
+    for row in current_grid:
+        occupied.update("".join(row))
+        print(''.join(row))
+    print(occupied["#"])
+    current_grid = copy.deepcopy(rows)
+    seen_grids = set()
+    max_attempts = 100000
+    for _attempt in tqdm(range(max_attempts)):
+        next_grid = evolve_grid(current_grid, 5, False)
+        if str(next_grid) in seen_grids or next_grid == current_grid:
+            break
+        current_grid = next_grid
     occupied = Counter()
     for row in current_grid:
         occupied.update("".join(row))
@@ -247,7 +215,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     # Required positional argument
-    parser.add_argument("--file", type=argparse.FileType("r"), help="Input file", default="2020/inputs/day_11/test.txt")
+    parser.add_argument("--file", type=argparse.FileType("r"), help="Input file", default="2020/day_11/test.txt")
 
     # Specify output of "--version"
     parser.add_argument(
@@ -263,6 +231,12 @@ if __name__ == "__main__":
 # TESTS
 
 @pytest.mark.parametrize("input, expected", [
+    ((
+        [".", OCCUPIED, EMPTY],
+        0, 1,
+        (+1, 0)
+    ), 0),
 ])
-def test_split_range(input, expected):
-    assert input == expected
+def test_get_next_seat(input, expected):
+    grid, row, column, direction = input
+    assert get_next_seat(grid, row, column, direction) == expected
