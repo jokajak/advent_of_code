@@ -7,6 +7,7 @@ __license__ = "GPLv3"
 import argparse
 import copy
 from functools import lru_cache
+from itertools import product
 
 import pytest
 import tqdm
@@ -23,7 +24,7 @@ def mask_write(mask, value):
     # Strip off '0b'
     bit_value = bit_value[2:]
     # Pad the bit_value to match the length of the mask
-    zero_pad = [0] * (len(mask) - len(bit_value))
+    zero_pad = ["0"] * (len(mask) - len(bit_value))
     bit_value = zero_pad + bit_value
     for bit in range(-1, -len(mask) - 1, -1):
         if mask[bit] == "X":
@@ -40,7 +41,7 @@ def get_floating_addresses(bit_mask):
     calculated_values = set()
     if "X" not in set(bit_mask):
         return {bit_mask}
-    # Convert to a list to ease operations
+    # Convert to a list to easet  operations
     bit_mask = list(bit_mask)
     for bit, val in enumerate(bit_mask):
         if val == "X":
@@ -50,6 +51,21 @@ def get_floating_addresses(bit_mask):
             new_bitmask[bit] = "1"
             calculated_values.update(get_floating_addresses("".join(new_bitmask)))
     return calculated_values
+
+
+def all_addrs(addr, mask):  # addr and mask are two strings of 36 characters
+    args = []
+
+    for addr_bit, mask_bit in zip(addr, mask):
+        if mask_bit == '0':
+            args.append(addr_bit)
+        elif mask_bit == '1':
+            args.append('1')
+        else:
+            args.append('01')
+
+    for a in product(*args):
+        yield int(''.join(a), 2)
 
 
 @lru_cache
@@ -111,12 +127,13 @@ def part_two(commands):
             mask = value
             continue
         location = int(command[4:-2])
-        mem_locations = get_mask_writes(mask, location)
-        for location in mem_locations:
-            mem[location] = int(value)
+        # From https://github.com/mebeim/aoc/tree/master/2020#day-14---docking-data
+        addr = '{:036b}'.format(location)
+        for a in all_addrs(addr, mask):
+            mem[a] = value
     total_value = 0
     for k in mem:
-        total_value += mem[k]
+        total_value += int(mem[k])
     return total_value
 
 
