@@ -5,7 +5,7 @@ from collections import defaultdict
 import pytest
 from parse import parse
 
-materialized_rules = defaultdict([])
+#materialized_rules = defaultdict([])
 
 
 def parse_rules(inputs):

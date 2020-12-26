@@ -35,6 +35,6 @@ def test_part_one(input, turns, expected):
     assert part_one(input, turns) == expected
 
 
-numbers = [1,2,16,19,18,0]
-print(part_one(numbers))
-print(part_one(numbers, turns=30000000))
+#numbers = [1,2,16,19,18,0]
+#print(part_one(numbers))
+#print(part_one(numbers, turns=30000000))
