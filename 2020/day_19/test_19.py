@@ -5,8 +5,6 @@ from collections import defaultdict
 import pytest
 from parse import parse
 
-#materialized_rules = defaultdict([])
-
 
 def parse_rules(inputs):
     rules = {}
@@ -21,7 +19,7 @@ def parse_rules(inputs):
             if len(rule_options) == 1:
                 rule_choices = rule["rule_value"].split(" ")
                 if len(rule_choices) == 1:
-                    rule_choices = [rule["rule_value"].strip('"')]
+                    rule_choices = rule["rule_value"].strip('"')
             else:
                 for rule_option in rule_options:
                     option_parts = rule_option.split(" ")
@@ -66,6 +64,69 @@ def resolve_rule(rules, index):
     else:
         ret = rule[0]
     return ret
+
+
+def parse_input(fin):
+    rules = {}
+
+    for line in map(str.rstrip, fin):
+        if not line:
+            break
+
+        rule_id, options = line.split(': ')
+        rule_id = int(rule_id)
+
+        if '"' in options:
+            rule = options[1:-1]
+        else:
+            rule = []
+            for option in options.split('|'):
+                rule.append(tuple(map(int, option.split())))
+
+        rules[rule_id] = rule
+
+    return rules
+
+
+def match(rules, string, rule=0, index=0):
+    # If we are past the end of the string, we can't match anything anymore
+    if index >= len(string):
+        return []
+
+    # Get the parsed rule for the current rule number
+    rule = rules[rule]
+    # If the current rule is a simple character, match that literally
+    if type(rule) is str:
+        # If it matches, advance 1 and return this information to the caller
+        if string[index] == rule:
+            return [index + 1]
+        # Otherwise fail, we cannot continue matching
+        return []
+
+    # If we get here, we are in the case `X: A B | C D`
+    matches = []
+
+    # For each option
+    for option in rule:
+        # Start matching from the current position
+        sub_matches = [index]
+
+        # For any rule of this option
+        for sub_rule in option:
+            # Get all resulting positions after matching this rule from any of the
+            # possible positions we have so far.
+            new_matches = []
+            for idx in sub_matches:
+                new_matches += match(rules, string, sub_rule, idx)
+
+            # Keep the new positions and continue with the next rule, trying to match all of them
+            sub_matches = new_matches
+
+        # Collect all possible matches for the current option and add them to the final result
+        matches += sub_matches
+
+    # Return all possible final indexes after matching this rule
+    return matches
 
 
 @pytest.mark.parametrize(
@@ -143,16 +204,23 @@ def main():
     part_one = 0
     for entry in lines:
         part_one += entry in valid_entries
+    print("Part 1: ", part_one)
 
-    rules["8"] = [["42"], ["42", "8"]]
-    rules["11"] = [["42", "31"], ["42", "11", "31"]]
+    rules = parse_input(lines)
+    rules[8] = [(42,), (42, 8)]
+    rules[11] = [(42, 31), (42, 11, 31)]
+    valid2 = 0
 
-    valid_entries = set(resolve_rule(rules, "0"))
-
-    part_two = 0
     for entry in lines:
-        part_two += entry in valid_entries
-    print("Part 2: {}".format(part_two))
+        if len(entry) in match(rules, entry):
+            valid2 += 1
+
+    # valid_entries = set(resolve_rule(rules, "0"))
+
+    # part_two = 0
+    # for entry in lines:
+    #     part_two += entry in valid_entries
+    print("Part 2: ", valid2)
 
 
 if __name__ == "__main__":
