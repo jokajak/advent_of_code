@@ -20,7 +20,7 @@ DIRECTIONS = {
     [
         ("esew", (1, 1)),
         ("nwwswee", (0, 0)),
-    ]
+    ],
 )
 def test_get_coordinate(input, expected):
     assert get_coordinate(input) == expected
@@ -48,6 +48,48 @@ def get_coordinate(id):
     return coordinate
 
 
+def should_flip(*, black_tiles, coordinate):
+    x, y = coordinate
+    black_neighbors = 0
+    ret = False
+    for direction in DIRECTIONS:
+        delta_x, delta_y = DIRECTIONS[direction]
+        new_coord = (x + delta_x, y + delta_y)
+        if new_coord in black_tiles:
+            black_neighbors += 1
+    if coordinate in black_tiles:
+        if black_neighbors == 0 or black_neighbors > 2:
+            ret = True
+    else:
+        if black_neighbors == 2:
+            ret = True
+    return ret
+
+
+def flip_tiles(black_tiles):
+    # any black tile with zero or more than 2 black tiles immediately adjacent flip to white
+    # any white tile with exactly 2 black tiles immediately adjacent flip to black
+    adjacent_coords = [
+        (+1, -1),
+        (+2, 0),
+        (+1, +1),
+        (-1, +1),
+        (-2, 0),
+        (-1, -1),
+    ]
+    new_tiles = set()
+    for tile in black_tiles:
+        x, y = tile
+        for dx, dy in adjacent_coords:
+            coord = (x + dx, y + dy)
+            should_tile_flip = should_flip(black_tiles=black_tiles, coordinate=coord)
+            if coord in black_tiles and not should_tile_flip:
+                new_tiles.add(coord)
+            elif coord not in black_tiles and should_tile_flip:
+                new_tiles.add(coord)
+    return new_tiles
+
+
 def main():
     lines = []
     with open("input.txt", "r") as f:
@@ -55,13 +97,19 @@ def main():
             lines.append(line.strip("\n"))
 
     black_tiles = set()
-    for line in tqdm.tqdm(lines):
+    for line in lines:
         coordinate = get_coordinate(line)
         if coordinate in black_tiles:
             black_tiles.remove(coordinate)
         else:
             black_tiles.add(coordinate)
     print("Part 1: ", len(black_tiles))
+
+    for _ in tqdm.tqdm(range(100)):
+        black_tiles = flip_tiles(black_tiles)
+
+    print("Part 2: ", len(black_tiles))
+
 
 
 if __name__ == "__main__":
