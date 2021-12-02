@@ -6,7 +6,6 @@
 	"recommendations": [
 		"ms-python.python",
 		"wraith13.bracket-lens",
-		"coenraads.bracket-pair-colorizer-2",
 		"editorconfig.editorconfig",
 		"usernamehw.errorlens",
 		"sirtori.indenticator",
