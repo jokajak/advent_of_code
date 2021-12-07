@@ -5,7 +5,6 @@ import pathlib
 import sys
 
 from dataclasses import dataclass
-from aocd.models import Puzzle
 from aocd import data, submit
 
 
