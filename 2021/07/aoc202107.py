@@ -2,6 +2,7 @@
 
 # Standard library imports
 from aocd import data, submit
+import time
 
 
 def parse(puzzle_input):
@@ -20,7 +21,7 @@ def part1(data):
     return minimum_fuel_cost
 
 
-def part2(data):
+def part2_slow(data):
     """Solve part 2.
 
     The crabs don't seem interested in your proposed solution. Perhaps you misunderstand crab engineering?
@@ -39,11 +40,35 @@ def part2(data):
     return min(minimum_fuel_cost)
 
 
+def part2(data):
+    """Solve part 2.
+
+    The crabs don't seem interested in your proposed solution. Perhaps you misunderstand crab engineering?
+
+    As it turns out, crab submarine engines don't burn fuel at a constant rate. Instead, each change of 1 step in
+    horizontal position costs 1 more unit of fuel than the last: the first step costs 1, the second step costs 2, the
+    third step costs 3, and so on.
+    """
+    minimum_fuel_cost = []
+    for possible_position in range(len(data)):
+        total_fuel_cost = 0
+        for initial_position in data:
+            distance = abs(initial_position - possible_position)
+            total_fuel_cost += int(((distance) * (distance + 1)) / 2)
+        minimum_fuel_cost.append(total_fuel_cost)
+    return min(minimum_fuel_cost)
+
+
 def solve(puzzle_input):
     """Solve the puzzle for the given input"""
     data = parse(puzzle_input)
     solution1 = part1(data)
+    tic = time.perf_counter()
+    solution2 = part2_slow(data)
+    toc = time.perf_counter()
     solution2 = part2(data)
+    tick = time.perf_counter()
+    print(f"Complete in {tic - toc:0.7f} seconds\nComplete in {toc - tick:0.7f} seconds")
 
     return solution1, solution2
 
