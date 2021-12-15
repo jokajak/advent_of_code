@@ -26,14 +26,10 @@ class Polymer:
         rules = self.rules
         new_polymer = defaultdict(int)
         for pair in polymer.keys():
-            # don't process empty pairs
-            while polymer[pair] > 0:
-                polymer[pair] -= 1
-                new_pair_1, new_pair_2 = rules[pair]
-                new_polymer[new_pair_1] += 1
-                new_polymer[new_pair_2] += 1
-                # update count of letters with the new letter between the pair
-                self.letters.update(new_pair_1[1])
+            new_pair_1, new_pair_2 = rules[pair]
+            new_polymer[new_pair_1] += polymer[pair]
+            new_polymer[new_pair_2] += polymer[pair]
+            self.letters.update({new_pair_1[1]: polymer[pair]})
         self.pairs = new_polymer
 
 
@@ -58,9 +54,9 @@ def process_polymer_change(polymer: defaultdict, rules: dict) -> defaultdict:
     new_polymer = defaultdict(int)
     for pair in polymer.keys():
         # don't process empty pairs
+        new_pair_1, new_pair_2 = rules[pair]
         while polymer[pair] > 0:
             polymer[pair] -= 1
-            new_pair_1, new_pair_2 = rules[pair]
             new_polymer[new_pair_1] += 1
             new_polymer[new_pair_2] += 1
     # assert (sum([v for v in polymer.values()])*2) == sum([v for v in new_polymer.values()])
