@@ -3,16 +3,38 @@
 # Standard library imports
 import pathlib
 import sys
-from collections import defaultdict
+from collections import defaultdict, Counter
 from dataclasses import dataclass
+from aocd import data as input_data, submit
 
 
 @dataclass
 class Polymer:
-    first_character: str
-    last_character: str
+    polymer: str
     pairs: defaultdict
     rules: defaultdict
+    letters: Counter
+
+    def __init__(self, polymer: str, rules: defaultdict) -> None:
+        self.polymer = polymer
+        self.letters = Counter(polymer)
+        self.rules = rules
+        self.pairs = polymer_to_pairs(polymer)
+
+    def iterate(self) -> None:
+        polymer = self.pairs
+        rules = self.rules
+        new_polymer = defaultdict(int)
+        for pair in polymer.keys():
+            # don't process empty pairs
+            while polymer[pair] > 0:
+                polymer[pair] -= 1
+                new_pair_1, new_pair_2 = rules[pair]
+                new_polymer[new_pair_1] += 1
+                new_polymer[new_pair_2] += 1
+                # update count of letters with the new letter between the pair
+                self.letters.update(new_pair_1[1])
+        self.pairs = new_polymer
 
 
 def parse(puzzle_input):
@@ -81,20 +103,33 @@ def part1(data, steps: int = 10) -> int:
     element?
     """
     polymer_template, rules = data
-    pairs = polymer_to_pairs(polymer_template)
-
-    pairs = iterate_polymer(pairs, rules, steps)
-    letters = count_letters(pairs)
-    max_letter_occurrence = -1
-    max_letter = [k for k, v in letters.items() if v > max_letter_occurrence]
-    min_letter_occurrence = letters[max_letter[0]]
-    min_letter = [k for k, v in letters.items() if v < min_letter_occurrence]
-    min_letter_occurrence = letters[min_letter[0]]
-    return max_letter_occurrence - min_letter_occurrence
+    polymer = Polymer(polymer_template, rules)
+    for _ in range(10):
+        polymer.iterate()
+    letter_counts = polymer.letters.most_common()
+    return letter_counts[0][1] - letter_counts[-1][1]
 
 
 def part2(data):
-    """Solve part 2"""
+    """Solve part 2.
+
+    The resulting polymer isn't nearly strong enough to reinforce the submarine. You'll need to run more steps of the
+    pair insertion process; a total of 40 steps should do it.
+
+    In the above example, the most common element is B (occurring 2192039569602 times) and the least common element is H
+    (occurring 3849876073 times); subtracting these produces 2188189693529.
+
+    Apply 40 steps of pair insertion to the polymer template and find the most and least common elements in the result.
+    What do you get if you take the quantity of the most common element and subtract the quantity of the least common
+    element?
+
+    """
+    polymer_template, rules = data
+    polymer = Polymer(polymer_template, rules)
+    for _ in range(40):
+        polymer.iterate()
+    letter_counts = polymer.letters.most_common()
+    return letter_counts[0][1] - letter_counts[-1][1]
 
 
 def solve(puzzle_input):
@@ -111,3 +146,9 @@ if __name__ == "__main__":
         print(f"\n{path}:")
         solutions = solve(puzzle_input=pathlib.Path(path).read_text().strip())
         print("\n".join(str(solution) for solution in solutions))
+
+    answer_a, answer_b = solve(puzzle_input=input_data)
+    if answer_a:
+        submit(answer_a, part="a")
+    if answer_b:
+        submit(answer_b, part="b")
