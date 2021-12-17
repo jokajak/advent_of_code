@@ -41,7 +41,7 @@ def part1(data):
     """
     grid = Grid(matrix=data)
     start = grid.node(0, 0)
-    end = grid.node(len(data)-1, len(data[0])-1)
+    end = grid.node(len(data) - 1, len(data[0]) - 1)
     finder = AStarFinder(diagonal_movement=DiagonalMovement.never)
     path, runs = finder.find_path(start, end, grid)
     print("operations:", runs, "path length:", len(path))
@@ -53,7 +53,6 @@ def part1(data):
 
 def expand_map(data):
     """Expand map data.
-
 
     The entire cave is actually five times larger in both dimensions than you thought; the area you originally scanned
     is just one tile in a 5x5 tile area that forms the full map. Your original map tile repeats to the right and
@@ -70,7 +69,20 @@ def expand_map(data):
 
 
 def part2(data):
-    """Solve part 2"""
+    """Solve part 2.
+
+    The entire cave is actually five times larger in both dimensions than you thought; the area you originally scanned
+    is just one tile in a 5x5 tile area that forms the full map. Your original map tile repeats to the right and
+    downward; each time the tile repeats to the right or downward, all of its risk levels are 1 higher than the tile
+    immediately up or left of it. However, risk levels above 9 wrap back around to 1. So, if your original map had some
+    position with a risk level of 8, then that same position on each of the 25 total tiles would be as follows:
+
+    8 9 1 2 3
+    9 1 2 3 4
+    1 2 3 4 5
+    2 3 4 5 6
+    3 4 5 6 7
+    """
 
 
 def solve(puzzle_input):
