@@ -66,6 +66,20 @@ def expand_map(data):
     2 3 4 5 6
     3 4 5 6 7
     """
+    new_grid = [[0 for _ in range(5 * len(data[0]))] for __ in range(5 * len(data))]
+    rows = len(data)
+    columns = len(data[0])
+    for row_expansion in range(5):
+        for column_expansion in range(5):
+            for row in range(len(data)):
+                for col in range(len(data[0])):
+                    current_value = data[row][col]
+                    new_val = current_value - 1 + column_expansion + row_expansion
+                    new_val = new_val % 9 + 1
+                    new_grid[row_expansion * rows + row][
+                        column_expansion * columns + col
+                    ] = new_val
+    return new_grid
 
 
 def part2(data):
@@ -83,6 +97,17 @@ def part2(data):
     2 3 4 5 6
     3 4 5 6 7
     """
+    data = expand_map(data)
+    grid = Grid(matrix=data)
+    start = grid.node(0, 0)
+    end = grid.node(len(data) - 1, len(data[0]) - 1)
+    finder = AStarFinder(diagonal_movement=DiagonalMovement.never)
+    path, runs = finder.find_path(start, end, grid)
+    print("operations:", runs, "path length:", len(path))
+    # Ignore the first node because it's not entered
+    total_risk = sum([data[coords[1]][coords[0]] for coords in path]) - data[0][0]
+    # print(grid.grid_str(path=path, start=start, end=end))
+    return total_risk
 
 
 def solve(puzzle_input):

@@ -33,11 +33,11 @@ def test_part1_example1(example1):
     assert aoc202115.part1(example1) == 40
 
 
-def test_part2_example2(example1, example2):
+def test_expand_map(example1, example2):
     """Test part 2 map is generated properly."""
     assert aoc202115.expand_map(example1) == example2
 
 
-def test_part2_example2(example2):
+def test_part2_example1(example1):
     """Test part 2 on example input"""
-    assert aoc202115.part2(example2) == 315
+    assert aoc202115.part2(example1) == 315
