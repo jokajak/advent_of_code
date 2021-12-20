@@ -14,42 +14,33 @@ def parse(puzzle_input):
     return (res["min_x"], res["max_x"]), (res["min_y"], res["max_y"])
 
 
+def step_trajectory(x_velocity, y_velocity):
+    x_pos = y_pos = 0
+    while True:
+        x_pos += x_velocity
+        y_pos += y_velocity
+        if x_velocity > 0:
+            x_velocity -= 1
+        y_velocity -= 1
+        yield x_pos, y_pos
+
+
 def reaches_target(target: tuple, velocities: tuple) -> bool:
     x_range, y_range = target
     delta_x, delta_y = velocities
     min_x, max_x = x_range
     min_y, max_y = y_range
     # 1+5 + 2+4 + 3 = 15 = n(n+1)/2 = 15
-    max_x_distance = (delta_x*(delta_x + 1))/2
-    # projectile won't reach
-    if max_x_distance < min_x:
-        return False
-    # x is too fast
-    if (max_x < delta_x):
+    max_x_distance = (delta_x * (delta_x + 1))/2
+    # projectile won't reach or is too fast
+    if (max_x_distance < min_x) or (max_x < delta_x):
         return False
     # x won't end up in the target
-    if (int(max_x / delta_x) * delta_x < min_x):
-        return False
-    x_pos = y_pos = 0
-    while delta_x > 0:
-        x_pos += delta_x
-        y_pos += delta_y
-        delta_x -= 1
-        delta_y -= 1
+    for x_pos, y_pos in step_trajectory(delta_x, delta_y):
         if (min_x <= x_pos <= max_x) and (min_y <= y_pos <= max_y):
             return True
-    # stopped moving horizontally, must not have made it
-    if not (min_x <= x_pos <= max_x):
-        return False
-    if delta_x == 0:
-        while y_pos > min_y:
-            y_pos += delta_y
-            delta_y -= 1
-            if (min_y <= y_pos <= max_y):
-                return True
-    if (min_x <= x_pos <= max_x) and (y_pos < min_y):
-        return False
-    raise ValueError
+        if x_pos > max_x or y_pos < min_y:
+            return False
 
 
 def part1(data):
