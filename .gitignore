@@ -110,3 +110,6 @@ venv.bak/
 !.vscode/launch.json
 !.vscode/extensions.json
 *.code-workspace
+
+# advent of code session
+.session

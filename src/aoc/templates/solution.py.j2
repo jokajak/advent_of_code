@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+"""AoC {{ day }}, {{ year }}.
+Created: {{ now }}
+
+{{ problem }}
+"""
+
+# Standard library imports
+from aocd.models import Puzzle
+
+
+def parse(input_data):
+    """Transform the data"""
+    return input_data
+
+
+def solve_part_one(input_data):
+    """Solve part one."""
+    answer = None
+    return answer
+
+
+def solve_part_two(input_data):
+    """Solve part two."""
+    answer = None
+    return answer
+
+
+def main():
+    puzzle = Puzzle(year={{ year }}, day={{ day }})
+    parsed_data = parse(puzzle.input_data)
+    answer_a = solve_part_one(parsed_data)
+    if answer_a:
+        puzzle.answer_a = answer_a
+    answer_b = solve_part_two(parsed_data)
+    if answer_b:
+        puzzle.answer_b = answer_b
+
+
+if __name__ == "__main__":
+    main()

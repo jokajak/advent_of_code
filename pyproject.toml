@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "aoc"
+version = "0.1.0"
+description = "Advent of Code scripts"
+authors = ["Josh <jokajak@gmail.com>"]
+license = "GPLv3"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+advent-of-code-data = "^1.2.0"
+rich = "^12.6.0"
+click = "^8.1.3"
+rich-click = "^1.5.2"
+Jinja2 = "^3.1.2"
+aoc-to-markdown = "^0.2.3"
+
+[tool.poetry.dev-dependencies]
+black = "^22.10.0"
+pytest = "^7.2.0"
+debugpy = "^1.6.3"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+add_day = "aoc.scripts.add_day:main"
+generate_readme = "aoc.scripts.generate_readme:main"
