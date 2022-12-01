@@ -75,7 +75,7 @@ def create_test_file(year: int, day: int) -> None:
     """Create test file if needed."""
     # Python doesn't like `import aoc.2021.01`, says it is not valid
     # Therefore use `import aoc.y2021.d01`
-    test_file = ROOT_DIR / "tests" / f"y{year}" / f"{day:02}.py"
+    test_file = ROOT_DIR / "tests" / f"y{year}" / f"test_{day:02}.py"
     template_file = ROOT_DIR / "templates" / "test.py.j2"
     solution_module = f"aoc.y{year}.d{day:02}"
 
