@@ -18,6 +18,7 @@ aoc-to-markdown = "^0.2.3"
 black = "^22.10.0"
 pytest = "^7.2.0"
 debugpy = "^1.6.3"
+isort = "^5.10.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
