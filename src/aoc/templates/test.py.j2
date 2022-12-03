@@ -1,37 +1,32 @@
 #!/usr/bin/env python
 """Tests for AoC {{ day }}, {{ year }}"""
 
+import pytest
 # Third party imports
 from aocd.models import Puzzle
-
- from {{ solution_module }} import parse, solve_part_one, solve_part_two
-import pytest
+from {{solution_module}} import parse, solve_part_one, solve_part_two
 
 
 @pytest.fixture
-def example1():
+def example_data():
     puzzle = Puzzle(year={{year}}, day={{day}})
     return puzzle.example_data
 
 
-@pytest.fixture
-def example2():
-    return parse(puzzle_input)
-
-
 @pytest.mark.skip(reason="Not implemented")
-def test_parse_example1(example1):
+def test_parse_example1(example_data):
     """Test that input is parsed properly"""
-    assert example1 is None
+    expected = None
+    assert parse(example_data) == expected
 
 
-def test_part1_example1(example1):
+def test_part1_example1(example_data):
     """Test part 1 on example input"""
     expected = None
-    assert solve_part_one(example1) == expected
+    assert solve_part_one(parse(example_data)) == expected
 
 
 def test_part2_example2(example2):
     """Test part 2 on example input"""
     expected = None
-    assert solve_part_two(example2) == expected
+    assert solve_part_two(parse(example_data)) == expected
