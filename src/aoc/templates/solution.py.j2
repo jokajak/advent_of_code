@@ -1,9 +1,6 @@
 #!/usr/bin/env python
-"""AoC {{ day }}, {{ year }}.
-Created: {{ now }}
-
-{{ problem }}
-"""
+"""Solutions for AoC {{ day }}, {{ year }}."""
+# Created: {{ now }}
 
 # Standard library imports
 from aocd.models import Puzzle
@@ -15,7 +12,10 @@ def parse(input_data):
 
 
 def solve_part_one(input_data):
-    """Solve part one."""
+    """Solve part one.
+
+    {{ problem }}
+    """
     answer = None
     return answer
 
@@ -27,7 +27,7 @@ def solve_part_two(input_data):
 
 
 def main():
-    puzzle = Puzzle(year={{ year }}, day={{ day }})
+    puzzle = Puzzle(year={{year}}, day={{day}})
     parsed_data = parse(puzzle.input_data)
     answer_a = solve_part_one(parsed_data)
     if answer_a:
