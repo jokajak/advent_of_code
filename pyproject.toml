@@ -32,3 +32,5 @@ generate_readme = "aoc.scripts.generate_readme:main"
 testpaths = [
   "src/aoc/tests"
 ]
+[tool.isort]
+profile = "black"
