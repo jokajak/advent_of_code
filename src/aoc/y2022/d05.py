@@ -266,27 +266,23 @@ def solve_part_two(input_data):
         # Make sure our data is sane
         if len(current_state[source]) == 0:
             return current_state
-        # if count > len(current_state[source]):
-        #     # Something went wrong
-        #     for col in current_state:
-        #         print(col)
-        # assert count <= len(current_state[source])
         left, right = current_state[source][:-count], current_state[source][-count:]
         current_state[source] = left
-        current_state[dest].extend(right)
+        current_state[dest] += right
         return current_state
 
+    print(input_data)
     state, instructions = input_data
     print("Initial state")
-    for col in state:
-        print(col)
+    for i, col in enumerate(state):
+        print(f"{i+1}: {''.join(col)}")
     ret = input()
     # ret = "c"
     for instruction in instructions:
         print(f"Parsing {instruction}")
         state = process_instruction(state, instruction)
-        for col in state:
-            print(col)
+        for i, col in enumerate(state):
+            print(f"{i+1}: {''.join(col)}")
         if ret != "c":
             ret = input()
 
@@ -303,6 +299,7 @@ def main():
     answer_a = solve_part_one(parsed_data)
     if answer_a:
         puzzle.answer_a = answer_a
+    parsed_data = parse(puzzle.input_data)
     answer_b = solve_part_two(parsed_data)
     if answer_b:
         puzzle.answer_b = answer_b
