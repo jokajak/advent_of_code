@@ -32,6 +32,7 @@ def main():
     answer_a = solve_part_one(parsed_data)
     if answer_a:
         puzzle.answer_a = answer_a
+    parsed_data = parse(puzzle.input_data)
     answer_b = solve_part_two(parsed_data)
     if answer_b:
         puzzle.answer_b = answer_b
