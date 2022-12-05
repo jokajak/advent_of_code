@@ -10,7 +10,13 @@
   "neoconf": {
     "plugins": {
       "pylsp": {
-        "enabled": true
+        "enabled": true,
+        "flake8": {
+          "maxLineLength": 88,
+          "ignore": [
+            "E203"
+          ]
+        }
       },
     }
   },
