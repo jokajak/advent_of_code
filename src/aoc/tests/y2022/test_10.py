@@ -251,7 +251,29 @@ def test_part1_example1(example_data):
     assert solve_part_one(parse(example_data)) == expected
 
 
+@pytest.mark.parametrize(
+    "cycle, expected",
+    [
+        (1, 1),
+        (2, 1),
+        (3, 16),
+        (4, 16),
+        (5, 5),
+        (6, 5),
+        (7, 11),
+        (8, 11),
+    ],
+)
+def test_part2_runs(example_data, cycle, expected):
+    assert run_program(parse(example_data), cycle) == expected
+
+
 def test_part2_example2(example_data):
     """Test part 2 on example input"""
-    expected = None
+    expected = """##..##..##..##..##..##..##..##..##..##..
+###...###...###...###...###...###...###.
+####....####....####....####....####....
+#####.....#####.....#####.....#####.....
+######......######......######......####
+#######.......#######.......#######....."""
     assert solve_part_two(parse(example_data)) == expected
