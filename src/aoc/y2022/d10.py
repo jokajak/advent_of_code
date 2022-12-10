@@ -44,7 +44,7 @@ def run_program(instructions, last_instruction=None):
     if last_instruction is None:
         last_instruction = instructions["last_instruction"]
     program_value = initial_value
-    for i in range(0, last_instruction + 1):
+    for i in range(0, last_instruction):
         if i in instructions:
             program_value += instructions[i]
             # print(f"{i}: {program_value}")
@@ -294,14 +294,10 @@ def solve_part_one(input_data):
     and 220th cycles. *What is the sum of these six signal strengths?*
     """
     cycles = [20, 60, 100, 140, 180, 220]
-    for cycle in range(220 - 5, 220 + 5):
-        strength = get_signal_strength(input_data, cycle)
-        print(f"{cycle}: {strength}")
     strengths = 0
-    # for cycle in cycles:
-    #     strength = get_signal_strength(input_data, cycle)
-    #     print(f"{cycle}: {strength}")
-    #     strengths += strength
+    for cycle in cycles:
+        strength = get_signal_strength(input_data, cycle)
+        strengths += strength
     answer = strengths
     return answer
 
