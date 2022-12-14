@@ -14,7 +14,6 @@ def example_data():
     return puzzle.example_data
 
 
-@pytest.mark.skip(reason="Not implemented")
 def test_parse(example_data):
     """Test that input is parsed properly"""
     expected = None
@@ -23,11 +22,17 @@ def test_parse(example_data):
 
 def test_part1(example_data):
     """Test part 1 on example input"""
-    expected = None
+    expected = Object()
+    ret = solve_part_one(parse(example_data))
+    if ret is None:
+        pytest.skip("Not yet implemented")
     assert solve_part_one(parse(example_data)) == expected
 
 
 def test_part2(example_data):
     """Test part 2 on example input"""
-    expected = None
+    expected = Object()
+    ret = solve_part_two(parse(example_data))
+    if ret is None:
+        pytest.skip("Not yet implemented")
     assert solve_part_two(parse(example_data)) == expected
