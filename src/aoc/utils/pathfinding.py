@@ -150,19 +150,19 @@ def reconstruct_path(
     return path
 
 
-def draw_grid(graph, **style):
-    if "trim" in style and not style["trim"]:
-        print("___" * graph.width)
-    else:
+def draw_grid(graph, y_min=0, x_min=0, **style):
+    if "trim" in style and style["trim"]:
         print("_" * graph.width)
-    for y in range(graph.height):
-        for x in range(graph.width):
+    else:
+        print("___" * graph.width)
+    for y in range(y_min, graph.height):
+        for x in range(x_min, graph.width):
             print("%s" % draw_tile(graph, (x, y), style), end="")
         print()
-    if "trim" in style and not style["trim"]:
-        print("~~~" * graph.width)
-    else:
+    if "trim" in style and style["trim"]:
         print("~" * graph.width)
+    else:
+        print("~~~" * graph.width)
 
 
 # utility functions for dealing with square grids
@@ -170,7 +170,7 @@ def from_id_width(id, width):
     return (id % width, id // width)
 
 
-def draw_tile(graph, id, style, trim=False):
+def draw_tile(graph, id, style):
     r = " . "
     if "number" in style and id in style["number"]:
         r = " %-2d" % style["number"][id]
@@ -194,8 +194,16 @@ def draw_tile(graph, id, style, trim=False):
     if "goal" in style and id == style["goal"]:
         r = " Z "
     if id in graph.walls:
-        r = "###"
-    if trim:
+        if style.get("trim", False):
+            r = "#"
+        else:
+            r = "###"
+    if "sand" in style and id in style["sand"]:
+        if style.get("trim", False):
+            r = "o"
+        else:
+            r = "ooo"
+    if style.get("trim", False):
         r = r.strip()
     return r
 
