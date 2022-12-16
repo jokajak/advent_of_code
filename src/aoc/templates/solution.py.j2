@@ -3,7 +3,7 @@
 # Created: {{ now }}
 
 # Standard library imports
-from aocd.models import Puzzle
+from aocd.models import Puzzle, default_user
 from rich import print
 
 
@@ -30,13 +30,17 @@ def solve_part_two(input_data):
 def main():
     puzzle = Puzzle(year={{year}}, day={{day}})
     parsed_data = parse(puzzle.input_data)
-    answer_a = solve_part_one(parsed_data)
-    if answer_a:
-        puzzle.answer_a = answer_a
-    parsed_data = parse(puzzle.input_data)
-    answer_b = solve_part_two(parsed_data)
-    if answer_b:
-        puzzle.answer_b = answer_b
+    u = default_user()
+    stats = u.get_stats({{year}}).get(({{year}}, {{day}}), {})
+    if stats.get("a", None) is None:
+        answer_a = solve_part_one(parsed_data)
+        if answer_a:
+            puzzle.answer_a = answer_a
+    if stats.get("b", None) is None:
+        parsed_data = parse(puzzle.input_data)
+        answer_b = solve_part_two(parsed_data)
+        if answer_b:
+            puzzle.answer_b = answer_b
 
 
 if __name__ == "__main__":

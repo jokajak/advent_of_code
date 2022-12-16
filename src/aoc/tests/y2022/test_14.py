@@ -88,3 +88,12 @@ def test_part2(example_data):
 )
 def test_parse_path(path_string, expected):
     assert sorted(list(Cave.parse_path(path_string))) == sorted(expected)
+
+
+def test_add_sand_bfs(example_data):
+    graph = parse(example_data)
+    graph.add_bottom(graph.height + 2)
+    answer = graph.add_sand_bfs()
+    graph.height += 3
+    graph.draw()
+    assert answer == 93

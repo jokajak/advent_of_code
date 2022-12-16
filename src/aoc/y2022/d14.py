@@ -2,10 +2,11 @@
 """Solutions for AoC 14, 2022."""
 # Created: 2022-12-14 09:53:25.343977
 
-from typing import Iterable
+from typing import Iterable, Iterator, Optional
 
 # Standard library imports
 from aocd.models import Puzzle
+from rich import inspect
 from rich.progress import track
 
 from aoc.utils import pathfinding
@@ -35,6 +36,16 @@ class Cave(pathfinding.SquareGrid):
         self.width = abs(min_x - max_x) + 2
         self.height = max_y
         self.sand_start = (500 - min_x, 0)
+        self.last_sand = self.sand_start
+
+    def neighbors(
+        self, id: pathfinding.GridLocation
+    ) -> Iterator[pathfinding.GridLocation]:
+        (x, y) = id
+        neighbors = [(x, y + 1), (x - 1, y + 1), (x + 1, y + 1)]
+        results = filter(self.in_bounds, neighbors)
+        results = filter(self.passable, results)
+        return results
 
     def add_bottom(self, row: int):
         """Add a bottom to the cave."""
@@ -44,11 +55,19 @@ class Cave(pathfinding.SquareGrid):
         # bottom = x - (500 - min_x)
         # x = bottom + (500 - min_x)
         self.bottom = row
+        # for x in range(-self.sand_start[0], self.width + self.sand_start[0] + 1):
+        #     self.walls.append((x, row))
+        min_x = -row - 1
+        # for y in range(row - 1, row):
+        #     self.walls.append((-self.bottom, y))
+        #     self.walls.append((self.sand_start[0] + self.bottom, y))
+        self.width = 2 * row + 1
 
     def in_bounds(self, id: pathfinding.GridLocation) -> bool:
         (x, y) = id
         if self.bottom:
-            return y <= self.bottom
+            min_x = -self.bottom + self.sand_start[0]
+            return 0 <= y <= self.bottom and min_x <= x
         else:
             return 0 <= x <= self.width and 0 <= y <= self.height
 
@@ -81,7 +100,13 @@ class Cave(pathfinding.SquareGrid):
 
     def draw(self):
         pathfinding.draw_grid(
-            self, y_min=0, x_min=-5, sand=self.sand, trim=True, start=self.sand_start
+            self,
+            y_min=0,
+            x_min=-self.height,
+            sand=self.sand,
+            trim=True,
+            start=self.sand_start,
+            blank=True,
         )
 
     def add_sand(self) -> bool:
@@ -109,7 +134,7 @@ class Cave(pathfinding.SquareGrid):
             (1, 1),
         )
         # Don't run for too long
-        max_positions = 100000
+        max_positions = 10000000
         for i in range(max_positions):
             if not self.passable((col, row)):
                 return False
@@ -119,8 +144,8 @@ class Cave(pathfinding.SquareGrid):
                     col = col + delta_col
                     row = row + delta_row
                     break  # break from inner loop because we can keep going
-                # finished for loop, coludn't move the sand
             else:
+                # finished for loop, coludn't move the sand
                 self.sand.append((col, row))
                 return True
             if not self.in_bounds((col, row)):
@@ -134,6 +159,24 @@ class Cave(pathfinding.SquareGrid):
 
     def passable(self, id: pathfinding.GridLocation) -> bool:
         return id not in self.walls and id not in self.sand
+
+    def add_sand_bfs(self):
+        frontier = pathfinding.Queue()
+        frontier.put(self.sand_start)
+        came_from: dict[pathfinding.Location, Optional[pathfinding.Location]] = {}
+        came_from[self.sand_start] = None
+
+        while not frontier.empty():
+            current: pathfinding.Location = frontier.get()
+
+            for next in self.neighbors(current):
+                if next not in came_from:
+                    frontier.put(next)
+                    came_from[next] = current
+
+        for sand in came_from:
+            self.sand.append(sand)
+        return len(came_from)
 
 
 def parse(input_data):
@@ -351,21 +394,23 @@ def solve_part_two(input_data):
     Using your scan, simulate the falling sand until the source of the sand becomes blocked. How many units of sand come to rest?
     """
     graph = input_data
-    bottom = graph.height
-    graph.height = graph.height + 4
-    graph.add_bottom(bottom)
-    r = "c"
-    for i in track(range(10000)):
-        if r != "c":
-            r = input("Continue? ")
-            graph.draw()
-        if not graph.add_sand():
-            break
-    else:
-        graph.draw()
-        raise ValueError("Couldn't stop the sand!")
-    answer = len(graph.sand)
+    graph.add_bottom(graph.height + 1)
+    graph.height += 3
+    # for i in track(range(1000000)):
+    #     if not graph.add_sand():
+    #         break
+    graph.draw()
+    answer = graph.add_sand_bfs()
+    x = graph.sand_start[1]
+    y = graph.sand_start[0]
+    for sand in graph.sand:
+        x = min(x, sand[1])
+        y = min(y, sand[0])
+    print(x)
+    print(y)
+    graph.draw()
     return answer
+    return len(graph.sand) + 3
 
 
 def main():

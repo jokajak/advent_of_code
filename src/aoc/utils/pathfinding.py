@@ -155,7 +155,14 @@ def draw_grid(graph, y_min=0, x_min=0, **style):
         print("_" * graph.width)
     else:
         print("___" * graph.width)
+    if style.get("draw_axis", False):
+        print("  ", end="")
+        for x in range(x_min, graph.width):
+            print("%d" % x, end="")
+        print()
     for y in range(y_min, graph.height):
+        if style.get("draw_axis", False):
+            print("%d " % y, end="")
         for x in range(x_min, graph.width):
             print("%s" % draw_tile(graph, (x, y), style), end="")
         print()
@@ -170,7 +177,7 @@ def from_id_width(id, width):
     return (id % width, id // width)
 
 
-def draw_tile(graph, id, style):
+def draw_tile(graph, id, style):  # noqa
     r = " . "
     if "number" in style and id in style["number"]:
         r = " %-2d" % style["number"][id]
@@ -205,6 +212,8 @@ def draw_tile(graph, id, style):
             r = "ooo"
     if style.get("trim", False):
         r = r.strip()
+    if style.get("blank", False):
+        r = r.replace(".", " ")
     return r
 
 
