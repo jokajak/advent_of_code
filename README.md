@@ -1,6 +1,6 @@
 # advent_of_code
 
-[![Stars collected](https://shields.io/static/v1?label=stars%20collected&message=35&color=yellow)]()
+[![Stars collected](https://shields.io/static/v1?label=stars%20collected&message=43&color=yellow)]()
 
 ![advent of code](./image_dark.svg#gh-dark-mode-only)
 ![advent of code](./image_light.svg#gh-light-mode-only)
