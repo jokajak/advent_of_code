@@ -3,6 +3,8 @@
 # Created: 2022-12-15 08:33:55.210123
 
 from functools import cache
+from itertools import product
+from typing import Tuple
 
 # Standard library imports
 from aocd.models import Puzzle, default_user
@@ -178,31 +180,57 @@ def calculate_range(sensor, y, reach):
         return left_x, right_x
 
 
-# From ChatGPT
+LineSegment = Tuple[GridLocation, GridLocation]
+
+# From https://stackoverflow.com/a/20677983
+def line_intersection(line1, line2):
+    xdiff = (line1[0][0] - line1[1][0], line2[0][0] - line2[1][0])
+    ydiff = (line1[0][1] - line1[1][1], line2[0][1] - line2[1][1])
+
+    def det(a, b):
+        return a[0] * b[1] - a[1] * b[0]
+
+    div = det(xdiff, ydiff)
+    if div == 0:
+        return None
+
+    d = (det(*line1), det(*line2))
+    x = int(det(d, xdiff) / div)
+    y = int(det(d, ydiff) / div)
+    return x, y
+
+
+# From ChatGPT. Is not right.
 def manhattan_intersection(
-    x1: int, y1: int, x2: int, y2: int, x3: int, y3: int, x4: int, y4: int
-) -> bool:
+    left_segment: LineSegment, right_segment: LineSegment
+) -> tuple:
     """
-    Calculates if two line segments intersect in Manhattan geometry.
+    Calculates the intersection point of two line segments in Manhattan geometry.
 
     The line segments are defined as pairs of points (x1, y1, x2, y2) and (x3, y3, x4, y4).
 
     Returns:
-        True if the line segments intersect, False otherwise.
+        A tuple of (x, y) coordinates for the intersection point, or None if the line segments do not intersect.
     """
+    left_start, left_end = left_segment
+    right_start, right_end = right_segment
+    x1, y1 = left_start
+    x2, y2 = left_end
+    x3, y3 = right_start
+    x4, y4 = right_end
     # Check if any of the endpoints of the first line segment lie on the second line segment
     if (min(x3, x4) <= x1 <= max(x3, x4)) and (min(y3, y4) <= y1 <= max(y3, y4)):
-        return True
+        return (x1, y1)
     if (min(x3, x4) <= x2 <= max(x3, x4)) and (min(y3, y4) <= y2 <= max(y3, y4)):
-        return True
+        return (x2, y2)
 
     # Check if any of the endpoints of the second line segment lie on the first line segment
     if (min(x1, x2) <= x3 <= max(x1, x2)) and (min(y1, y2) <= y3 <= max(y1, y2)):
-        return True
+        return (x3, y3)
     if (min(x1, x2) <= x4 <= max(x1, x2)) and (min(y1, y2) <= y4 <= max(y1, y2)):
-        return True
+        return (x4, y4)
 
-    return False
+    return None
 
 
 def solve_part_one(input_data, y=2000000):
@@ -394,32 +422,77 @@ def solve_part_two(input_data, search_area=4000000):
             for y in range(max_val + 1):
                 yield y, x
 
-    # the point where a beacon can be will be around an intersection between a
-    # -1 slope and a +1 slope
-    def get_segment_ups(point: GridLocation, reach: int) -> Tuple(int, int):
+    def get_up_segments(
+        point: GridLocation, reach: int
+    ) -> Tuple[LineSegment, LineSegment]:
         x, y = point
         top = y - reach
         bottom = y + reach
         left = x - reach
         right = x + reach
-        # x increases as y approaches y_pos
-        # y = +1 x + b
-        # b = y - x
-        left_b = top[1] - top[0]
-        # x decreases as y approaches y_pos
-        # y = -1 x + b
-        # b = y + x
-        right_b = y_pos[1] + y_pos[0]
-        # y = -1 x + b => y + x = b => x = b - y
-        right_x = right_b - y
-        # y = 1 x + b => y - b = x
-        left_x = y - left_b
-        if y < s_y:
-            return right_x, left_x
-        else:
-            return left_x, right_x
 
-        pass
+        return (left, y), (x, top), (x, bottom), (right, y)
+
+    def get_down_segments(
+        point: GridLocation, reach: int
+    ) -> Tuple[LineSegment, LineSegment]:
+        x, y = point
+        top = y - reach
+        bottom = y + reach
+        left = x - reach
+        right = x + reach
+
+        return (x, top), (right, y), (left, y), (x, bottom)
+
+    up_segments = []
+    down_segments = []
+
+    for sensor in track(tunnel.sensors, description="Calculating segments"):
+        reach = tunnel.sensor_distances.get(sensor)
+        ups = get_up_segments(sensor, reach)
+        downs = get_down_segments(sensor, reach)
+        up_segments.append(ups[2:])
+        up_segments.append(ups[:2])
+        down_segments.append(downs[:2])
+        down_segments.append(downs[2:])
+
+    possible_intersections = []
+    for left_segment, right_segment in track(
+        product(up_segments, down_segments), description="Finding valid intersections"
+    ):
+        intersection = line_intersection(left_segment, right_segment)
+        if intersection is None:
+            continue
+        x, y = intersection
+        if 0 <= x <= search_area and 0 <= y <= search_area:
+            possible_intersections.append(intersection)
+
+    def get_neighbors(distance):
+        for x in range(-distance, distance):
+            for y in range(-distance, distance):
+                yield ((x, y))
+
+    print(f"Found {len(possible_intersections)} intersections")
+    usable = set()
+    for ipoint in track(
+        possible_intersections, description="Testing intersection points"
+    ):
+        # look around the point because I'm lazy
+        for delta in get_neighbors(2):
+            point = (delta[0] + ipoint[0], delta[1] + ipoint[1])
+            if point[0] < 0 or point[1] < 0:
+                continue
+            for sensor in tunnel.sensors:
+                reach = tunnel.sensor_distances.get(sensor)
+                if inside_sensor(sensor, point, reach):
+                    # print(f"{point} reachable by {sensor}")
+                    break
+            else:
+                usable.add(point)
+
+    print(usable)
+    beacon_point = usable.pop()
+    return beacon_point[0] * frequency_multiplier + beacon_point[1]
 
     # This approach is naive and won't work.
     # Takes too long
