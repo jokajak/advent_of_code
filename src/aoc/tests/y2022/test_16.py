@@ -26,8 +26,7 @@ Valve FF has flow rate=0; tunnels lead to valves EE, GG
 Valve GG has flow rate=0; tunnels lead to valves FF, HH
 Valve HH has flow rate=22; tunnel leads to valve GG
 Valve II has flow rate=0; tunnels lead to valves AA, JJ
-Valve JJ has flow rate=21; tunnel leads to valve II
-    """
+Valve JJ has flow rate=21; tunnel leads to valve II"""
     volcano = parse(example_data)
     assert "\n".join(str(v) for _, v in volcano.nodes.items()) == expected
 
@@ -50,7 +49,7 @@ def test_part1(example_data):
 def test_part2(example_data):
     """Test part 2 on example input"""
     expected = 1707
-    ret = solve_part_two(parse(example_data))
+    ret = solve_part_two(parse(example_data), example_data)
     if expected is None:
         pytest.skip("Not yet implemented")
     assert ret == expected

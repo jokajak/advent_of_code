@@ -3,7 +3,8 @@
 # Created: 2022-12-16 19:57:08.976856
 
 from collections import defaultdict
-from itertools import product
+from functools import partial
+from itertools import combinations, product
 from math import inf as INFINITY
 from typing import Optional, Tuple
 
@@ -31,7 +32,8 @@ class Valve:
 
     def __str__(self):
         # Valve AA has flow rate=0; tunnels lead to valves DD, II, BB
-        return f"Valve {self.name} has flow rate={self.flow_rate}; tunnels lead to valves {', '.join(self.neighbors)}"
+        n = len(self.neighbors)
+        return f"Valve {self.name} has flow rate={self.flow_rate}; tunnel{'s' if n > 1 else ''} lead{'s' if n < 2 else ''} to valve{'s' if n > 1 else ''} {', '.join(self.neighbors)}"
 
 
 class Volcano(WeightedGraph):
@@ -156,13 +158,12 @@ def walk_volcano(
 
 # From https://github.com/mebeim/aoc/blob/master/2022/README.md#day-16---proboscidea-volcanium
 def solutions(distance, valves, time=30, cur="AA", chosen={}):
-    # We can't reach any other valve in less than 2m, as it would take minimum
-    # 1m to reach it plus 1m to open it, and therefore it'd be stay open for 0m.
-
     # For all the valves we can currently choose
     for nxt in valves:
         # Choosing this valve will take distance[cur][nxt] to reach it 1m to open it
         new_time = time - (distance[cur][nxt] + 1)
+        # We can't reach any other valve in less than 2m, as it would take minimum
+        # 1m to reach it plus 1m to open it, and therefore it'd be stay open for 0m.
         if new_time < 2:
             continue
         # Choose this valve, it will stay open exactly for new_time (i.e. the time
@@ -383,13 +384,6 @@ def solve_part_one(input_data):
 
     best = 0
 
-    # from https://github.com/mebeim/aoc/blob/master/2022/README.md#day-16---proboscidea-volcanium
-    def score(rates, chosen_valves):
-        tot = 0
-        for valve, time_left in chosen_valves.items():
-            tot += rates[valve] * time_left
-        return tot
-
     # distance = input_data.distances
     # valves = {id for id in input_data.nodes}
     # rates = {id: v.flow_rate for id, v in input_data.nodes.items()}
@@ -401,7 +395,15 @@ def solve_part_one(input_data):
     return answer
 
 
-def solve_part_two(input_data):
+# from https://github.com/mebeim/aoc/blob/master/2022/README.md#day-16---proboscidea-volcanium
+def score(rates, chosen_valves):
+    tot = 0
+    for valve, time_left in chosen_valves.items():
+        tot += rates[valve] * time_left
+    return tot
+
+
+def solve_part_two(input_data, raw_data):
     """Solve part two.
 
     You're worried that even with an optimal approach, the pressure released won't be enough. What if you got one of the elephants to help you?
@@ -483,7 +485,79 @@ def solve_part_two(input_data):
     With you and an elephant working together for 26 minutes, what is the most pressure you could release?
 
     """
-    answer = None
+
+    def floyd_warshall(g):
+        distance = defaultdict(lambda: defaultdict(lambda: INFINITY))
+
+        for a, bs in g.items():
+            distance[a][a] = 0
+
+            for b in bs:
+                distance[a][b] = 1
+                distance[b][b] = 0
+
+        for a, b, c in product(g, g, g):
+            bc, ba, ac = distance[b][c], distance[b][a], distance[a][c]
+
+            if ba + ac < bc:
+                distance[b][c] = ba + ac
+
+        return distance
+
+    graph = defaultdict(list)
+    rates = {}
+
+    for fields in map(str.split, raw_data.splitlines()):
+        src = fields[1]
+        dsts = list(map(lambda x: x.rstrip(","), fields[9:]))
+        rate = int(fields[4][5:-1])
+
+        rates[src] = rate
+
+        for dst in dsts:
+            graph[src].append(dst)
+    distance = floyd_warshall(graph)
+    good = frozenset(filter(rates.get, graph))
+    max_scores = defaultdict(int)
+
+    for solution in solutions(distance=distance, valves=good, time=26):
+        k = frozenset(solution)
+        s = score(rates, solution)
+
+        if s > max_scores[k]:
+            max_scores[k] = s
+    # All of these return the wrong thing, wtf?
+    # best = 0
+    # for (s1, score1), (s2, score2) in track(
+    #     combinations(max_scores.items(), 2),
+    #     description="Calculating best pair of solutions",
+    # ):
+    #     # These are the same paths, continue
+    #     if not (s1 & s2):
+    #         continue
+    #
+    #     cur = score1 + score2
+    #     if cur > best:
+    #         best = cur
+    # best = 0
+    # all_scores = []
+    # for (a, sa), (b, sb) in combinations(max_scores.items(), 2):
+    #     if not a & b:
+    #         continue
+    #     cur = sa + sb
+    #     all_scores.append(cur)
+    #     if cur > best:
+    #         best = cur
+    # #
+    # print(sorted(all_scores))
+    # all_scores = [
+    #     sa + sb for (a, sa), (b, sb) in combinations(max_scores.items(), 2) if not a & b
+    # ]
+    best = max(
+        sa + sb for (a, sa), (b, sb) in combinations(max_scores.items(), 2) if not a & b
+    )
+    answer = best
+
     return answer
 
 
@@ -498,7 +572,7 @@ def main():
             puzzle.answer_a = answer_a
     if stats.get("b", None) is None:
         parsed_data = parse(puzzle.input_data)
-        answer_b = solve_part_two(parsed_data)
+        answer_b = solve_part_two(parsed_data, puzzle.input_data)
         if answer_b:
             puzzle.answer_b = answer_b
 
