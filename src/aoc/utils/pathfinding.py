@@ -250,3 +250,23 @@ def a_star_search(graph: WeightedGraph, start: Location, goal: Location):
                 came_from[next] = current
 
     return came_from, cost_so_far
+
+
+def breadth_first_search(graph: Graph, start: Location, goal: Location):
+    frontier = Queue()
+    frontier.put(start)
+    came_from: dict[Location, Optional[Location]] = {}
+    came_from[start] = None
+
+    while not frontier.empty():
+        current: Location = frontier.get()
+
+        if current == goal:
+            break
+
+        for next in graph.neighbors(current):
+            if next not in came_from:
+                frontier.put(next)
+                came_from[next] = current
+
+    return came_from
