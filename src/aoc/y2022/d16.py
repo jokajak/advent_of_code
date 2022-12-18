@@ -35,15 +35,15 @@ class Valve:
 
 
 class Volcano(WeightedGraph):
-    def __init__(self, nodes: dict[str, Valve]):
+    def __init__(self, nodes: dict[str, Valve], distances=None):
         super().__init__()
         self.nodes: dict[str, Valve] = nodes
-        self.distances: dict[str, str] = self.calculate_distances()
+        self.distances: dict[str, str] = distances or self.calculate_distances()
 
     def neighbors(self, id: Location) -> list[Location]:
-        ret = self.nodes[id].neighbors
+        ret = set(self.nodes[id].neighbors)
         if self.nodes[id].is_closed:
-            ret += [id]
+            ret.add(id)
         return ret
 
     def cost(self, from_id: Location, to_id: Location, time_left: int = 0) -> float:
@@ -55,7 +55,6 @@ class Volcano(WeightedGraph):
         #   The sum of the value of the other nodes that are not open
         #   (including this one)
         #   The value of a node = (time_left - distance) * flow_rate
-        print(f"{from_id} -> {to_id}")
         total = 0
         for id, node in self.nodes.items():
             if id == to_id or node.flow_rate == 0:
@@ -64,7 +63,6 @@ class Volcano(WeightedGraph):
                 distance = self.distances[from_id][id]
                 # value is the time left minus distance minus time to open it
                 value = (time_left - distance - 1) * node.flow_rate
-                print(f"{id} is worth {value}")
                 total += value
         return total
 
@@ -120,50 +118,62 @@ def parse_line(line: str) -> Tuple[str, int, list]:
     return name, rate, neighbors
 
 
-def walk_volcano(graph: WeightedGraph, minutes: int = 30):
+def walk_volcano(
+    graph: WeightedGraph, current: str = "AA", minutes: int = 30, path: dict = {}
+):
     """Use DFS algorithm to walk volcano for steps."""
-    start = "AA"
-    frontier = Queue()
-    frontier.put(start)
-    came_from: dict[Location, Optional[Location]] = {}
-    total_pressure = 0
 
-    r = "r"
-    for minute in range(minutes, 0, -1):
-        current: Location = frontier.get()
-        if r != "c":
-            # == Minute 1 ==
-            # No valves are open.
-            # You move to valve DD.
-            print(f"== Minute {minutes - minute} ==")
-            print(graph)
-            r = input("Continue? ")
+    for valve, node in graph.nodes.items():
+        # This node won't be a good choice, move on
+        # or is already open
+        if node.flow_rate == 0 or not node.is_closed:
+            continue
+        # we have to walk to the other node and then open it
+        time_left = minutes - (graph.distances[current][valve] + 1)
 
-        min_cost = float("inf")
-        next_node = None
-        node_costs = {}
-        for next in graph.neighbors(current):
-            if node_costs.get(next, 0) > 0:
-                continue
-            new_cost = graph.cost(current, next, minute)
-            node_costs[next] = new_cost
-            if r != "c":
-                print(f"{next} costs {new_cost} vs {min_cost}")
-                r = input("Continue? ")
+        # Valves take one minute to open and one minute to release
+        # If we only have one minute left then there's no change to the output
+        # So leave early
+        if time_left < 2:
+            continue
+        # update the chosen path. This joins 2 dictionaries
+        new_path = path | {valve: time_left}
+        # create a new view of the graph
+        new_valves = {}
+        # Have to create new valve objects, not just new graph objects
+        for n, v in graph.nodes.items():
+            new_valve = Valve(n, v.flow_rate, v.neighbors)
+            new_valves[n] = new_valve
+            if n in path or n == valve:
+                v.is_closed = False
+        new_volcano = Volcano(new_valves, distances=graph.distances)
+        yield from walk_volcano(
+            new_volcano, current=valve, minutes=time_left, path=new_path
+        )
 
-            if new_cost > min_cost:
-                continue
-            else:
-                min_cost, next_node = new_cost, next
-        assert next_node is not None
-        if next_node == current:
-            graph.nodes[current].is_closed = False
-            # subtract one from the minute because it takes a minute to open a valve
-            total_pressure += (minute - 1) * graph.nodes[current].flow_rate
-        frontier.put(next_node)
-        came_from[next_node] = current
+    yield path
 
-    return total_pressure
+
+# From https://github.com/mebeim/aoc/blob/master/2022/README.md#day-16---proboscidea-volcanium
+def solutions(distance, valves, time=30, cur="AA", chosen={}):
+    # We can't reach any other valve in less than 2m, as it would take minimum
+    # 1m to reach it plus 1m to open it, and therefore it'd be stay open for 0m.
+
+    # For all the valves we can currently choose
+    for nxt in valves:
+        # Choosing this valve will take distance[cur][nxt] to reach it 1m to open it
+        new_time = time - (distance[cur][nxt] + 1)
+        if new_time < 2:
+            continue
+        # Choose this valve, it will stay open exactly for new_time (i.e. the time
+        # we have now minus the time it takes to reach and open it).
+        new_chosen = chosen | {nxt: new_time}
+        # The new valves to choose from will not include this one
+        new_valves = valves - {nxt}
+        # Collect all possible choices having taken this valve
+        yield from solutions(distance, new_valves, new_time, nxt, new_chosen)
+
+    yield chosen
 
 
 # from https://www.geeksforgeeks.org/floyd-warshall-algorithm-dp-16/
@@ -209,8 +219,14 @@ def parse(input_data):
     #     valve.neighbors = [valves[neighbor] for neighbor in valve.neighbors]
 
     volcano = Volcano(valves)
-    inspect(volcano.distances)
     return volcano
+
+
+def my_score(graph: WeightedGraph, path: dict):
+    score = 0
+    for valve, time in path.items():
+        score += graph.nodes[valve].flow_rate * time
+    return score
 
 
 def solve_part_one(input_data):
@@ -358,12 +374,115 @@ def solve_part_one(input_data):
     Work out the steps to release the most pressure in 30 minutes. *What
     is the most pressure you can release?*
     """
-    answer = walk_volcano(input_data)
+    best = 0
+    for entry in track(walk_volcano(input_data), description="Finding paths"):
+        current_score = my_score(input_data, entry)
+        if current_score > best:
+            best = current_score
+    answer = best
+
+    best = 0
+
+    # from https://github.com/mebeim/aoc/blob/master/2022/README.md#day-16---proboscidea-volcanium
+    def score(rates, chosen_valves):
+        tot = 0
+        for valve, time_left in chosen_valves.items():
+            tot += rates[valve] * time_left
+        return tot
+
+    # distance = input_data.distances
+    # valves = {id for id in input_data.nodes}
+    # rates = {id: v.flow_rate for id, v in input_data.nodes.items()}
+    # for entry in track(solutions(distance, valves), description="Scoring paths"):
+    #     current_score = score(rates, entry)
+    #     if current_score > best:
+    #         best = current_score
+    # answer = best
     return answer
 
 
 def solve_part_two(input_data):
-    """Solve part two."""
+    """Solve part two.
+
+    You're worried that even with an optimal approach, the pressure released won't be enough. What if you got one of the elephants to help you?
+
+    It would take you 4 minutes to teach an elephant how to open the right valves in the right order, leaving you with only 26 minutes to actually execute your plan. Would having two of you working together be better, even if it means having less time? (Assume that you teach the elephant before opening any valves yourself, giving you both the same full 26 minutes.)
+
+    In the example above, you could teach the elephant to help you as follows:
+
+    == Minute 1 ==
+    No valves are open.
+    You move to valve II.
+    The elephant moves to valve DD.
+
+    == Minute 2 ==
+    No valves are open.
+    You move to valve JJ.
+    The elephant opens valve DD.
+
+    == Minute 3 ==
+    Valve DD is open, releasing 20 pressure.
+    You open valve JJ.
+    The elephant moves to valve EE.
+
+    == Minute 4 ==
+    Valves DD and JJ are open, releasing 41 pressure.
+    You move to valve II.
+    The elephant moves to valve FF.
+
+    == Minute 5 ==
+    Valves DD and JJ are open, releasing 41 pressure.
+    You move to valve AA.
+    The elephant moves to valve GG.
+
+    == Minute 6 ==
+    Valves DD and JJ are open, releasing 41 pressure.
+    You move to valve BB.
+    The elephant moves to valve HH.
+
+    == Minute 7 ==
+    Valves DD and JJ are open, releasing 41 pressure.
+    You open valve BB.
+    The elephant opens valve HH.
+
+    == Minute 8 ==
+    Valves BB, DD, HH, and JJ are open, releasing 76 pressure.
+    You move to valve CC.
+    The elephant moves to valve GG.
+
+    == Minute 9 ==
+    Valves BB, DD, HH, and JJ are open, releasing 76 pressure.
+    You open valve CC.
+    The elephant moves to valve FF.
+
+    == Minute 10 ==
+    Valves BB, CC, DD, HH, and JJ are open, releasing 78 pressure.
+    The elephant moves to valve EE.
+
+    == Minute 11 ==
+    Valves BB, CC, DD, HH, and JJ are open, releasing 78 pressure.
+    The elephant opens valve EE.
+
+    (At this point, all valves are open.)
+
+    == Minute 12 ==
+    Valves BB, CC, DD, EE, HH, and JJ are open, releasing 81 pressure.
+
+    ...
+
+    == Minute 20 ==
+    Valves BB, CC, DD, EE, HH, and JJ are open, releasing 81 pressure.
+
+    ...
+
+    == Minute 26 ==
+    Valves BB, CC, DD, EE, HH, and JJ are open, releasing 81 pressure.
+
+    With the elephant helping, after 26 minutes, the best you could do would release a total of 1707 pressure.
+
+    With you and an elephant working together for 26 minutes, what is the most pressure you could release?
+
+    """
     answer = None
     return answer
 
