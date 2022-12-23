@@ -57,7 +57,7 @@ def test_part1(example_data):
 
 def test_part2(example_data):
     """Test part 2 on example input"""
-    expected = None
+    expected = 1623178306
     ret = solve_part_two(parse(example_data))
     if expected is None:
         pytest.skip("Not yet implemented")
