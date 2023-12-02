@@ -6,7 +6,6 @@ from textwrap import wrap
 
 from aoc import ROOT_DIR
 from aoc.utils.console import console
-from aoc_to_markdown import get_markdown
 import rich_click as click
 from jinja2 import Template
 
@@ -55,9 +54,9 @@ def create_solution_file(year: int, day: int) -> None:
         return
 
     markdown = []
-    lines = str.splitlines(get_markdown(year, day))
-    for line in lines:
-        markdown.extend(wrap(line, replace_whitespace=False, drop_whitespace=False))
+    # lines = str.splitlines(get_markdown(year, day))
+    # for line in lines:
+    #     markdown.extend(wrap(line, replace_whitespace=False, drop_whitespace=False))
     problem_statement = "\n".join(markdown)
 
     with open(template_file) as template:

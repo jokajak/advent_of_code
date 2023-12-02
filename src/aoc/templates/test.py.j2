@@ -11,7 +11,7 @@ from {{solution_module}} import parse, solve_part_one, solve_part_two
 @pytest.fixture
 def example_data():
     puzzle = Puzzle(year={{year}}, day={{day}})
-    return puzzle.example_data
+    return puzzle.examples[0].input_data
 
 
 def test_parse(example_data):
