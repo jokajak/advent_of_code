@@ -140,55 +140,52 @@ def solve_part_one(input_data):
 @cache
 def get_hand_key(hand):
     hand_key = [CARD_VALUES_2.index(card) for card in hand]
+    # Hard code this value
+    if hand == "JJJJJ":
+        return get_hand_key("AAAAA")
     print(f"{hand} -> {hand_key}")
     return hand_key
 
 
-def sort_hands(hands):
-    optimum_hands = {get_optimum_hand(hand): hand for hand in hands}
+def cmp_hands(left_hand, right_hand):
+    for left_card, right_card in zip(left_hand, right_hand):
+        if CARD_INDEX_2[left_card] == CARD_INDEX_2[right_card]:
+            continue
+        return CARD_INDEX_2[right_card] - CARD_INDEX_2[left_card]
 
-    print(f"Optimum: {optimum_hands}")
-    grouped_wild_hands = sorted(optimum_hands.keys(), key=get_hand_type)
+
+def sort_hands(hands):
     hand_types = defaultdict(list)
-    for hand in optimum_hands.keys():
-        hand_type = get_hand_type(hand)
+    for hand in hands:
+        hand_type = get_hand_type(get_optimum_hand(hand))
         hand_types[hand_type].append(hand)
     for hand_type, hands in hand_types.items():
-        hand_types[hand_type] = sorted(hands, key=get_hand_key, reverse=True)
-    print(hand_types)
+        hand_types[hand_type] = sorted(hands, key=cmp_to_key(cmp_hands))
 
     valid_hand_types = sorted(hand_types.keys())
     grouped_hands = []
     for i in valid_hand_types:
         print(hand_types[i])
-        grouped_hands.extend(optimum_hands[hand] for hand in hand_types[i])
-    # grouped_hands = [optimum_hands[hand] for hand in grouped_wild_hands]
+        grouped_hands.extend(hand_types[i])
 
     return grouped_hands
 
 
 def rank_hands(input_data):
     """Rank hands with jokers wild."""
-    optimum_hands = {get_optimum_hand(hand): hand for hand in input_data.keys()}
-
-    print(f"Optimum: {optimum_hands}")
-    grouped_wild_hands = sorted(optimum_hands.keys(), key=get_hand_type)
     hand_types = defaultdict(list)
-    for hand in optimum_hands.keys():
-        hand_type = get_hand_type(hand)
+    for hand in input_data.keys():
+        hand_type = get_hand_type(get_optimum_hand(hand))
         hand_types[hand_type].append(hand)
     for hand_type, hands in hand_types.items():
-        hand_types[hand_type] = sorted(hands, key=get_hand_key, reverse=True)
-    print(hand_types)
+        hand_types[hand_type] = sorted(hands, key=cmp_to_key(cmp_hands))
 
     valid_hand_types = sorted(hand_types.keys())
     grouped_hands = []
+    print(hand_types)
     for i in valid_hand_types:
-        print(hand_types[i])
-        grouped_hands.extend(optimum_hands[hand] for hand in hand_types[i])
-    # grouped_hands = [optimum_hands[hand] for hand in grouped_wild_hands]
+        grouped_hands.extend(hand_types[i])
 
-    print(f"Grouped: {grouped_hands}")
     return grouped_hands
 
 
@@ -210,6 +207,7 @@ def solve_part_two(input_data):
     sorted_hands = rank_hands(input_data)
     print(f"Sorted: {sorted_hands}")
     answer = 0
+    assert len(input_data.keys()) == len(sorted_hands)
     for rank, hand in enumerate(sorted_hands):
         answer += (rank + 1) * input_data[hand]
     return answer

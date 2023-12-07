@@ -76,6 +76,7 @@ def test_part1(example_data):
             ["32T3K", "KK677", "T55J5", "QQQJA", "KTJJT"],
         ),
         (["AAQAA", "AAJ4A"], ["AAJ4A", "AAQAA"]),
+        (["AAQAA", "AJA6A"], ["AJA6A", "AAQAA"]),
     ],
 )
 def test_sort_hands(hands, expected):
@@ -87,6 +88,34 @@ def test_part2(example_data):
     """Test part 2 on example input"""
     expected = 5905
     ret = solve_part_two(parse(example_data))
+    if expected is None:
+        pytest.skip("Not yet implemented")
+    assert ret == expected
+
+
+def test_part2_edge_cases():
+    """From https://www.reddit.com/r/adventofcode/comments/18cr4xr/2023_day_7_better_example_input_not_a_spoiler/"""
+    input_data = """2345A 1
+Q2KJJ 13
+Q2Q2Q 19
+T3T3J 17
+T3Q33 11
+2345J 3
+J345A 2
+32T3K 5
+T55J5 29
+KK677 7
+KTJJT 34
+QQQJA 31
+JJJJJ 37
+JAAAA 43
+AAAAJ 59
+AAAAA 61
+2AAAA 23
+2JJJJ 53
+JJJJ2 41"""
+    expected = 6839
+    ret = solve_part_two(parse(input_data))
     if expected is None:
         pytest.skip("Not yet implemented")
     assert ret == expected
