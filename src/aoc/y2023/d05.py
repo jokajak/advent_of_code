@@ -8,6 +8,7 @@ from rich import print
 from rich.progress import track
 from collections import defaultdict
 import math
+from typing import List, Tuple
 
 
 categories = {}
@@ -133,6 +134,51 @@ def solve_part_one(input_data):
     return answer
 
 
+def get_map_range(input_range, map_values):
+    """Given an input range, return the results of the map.
+
+    For example:
+
+    ((11, 20), (1, 5, 10)) -> [(7,15), (16-20)]
+    ((79, 93), (52, 50, 48)) -> [(81, 95)]
+
+    This needs to return multiple information to the caller so that I can account for
+    the scenario of having an input_range of (1, 50) and two map_values of:
+    (5, 10, 5) and (10, 15, 5)
+
+    Therefore it returns a dictionary of:
+    mapped:
+    unmapped:
+    """
+    source_beginning, source_end = input_range
+    dest_beginning = dest_end = None
+    map_dest_start, map_source_start, count = map_values
+    map_dest_end, map_source_end = map_dest_start + count, map_source_start + count
+    offset = map_dest_start - map_source_start
+    # if the start is within range, then we have a new start
+    # if the end is within range, then we have a new end
+    if map_source_start <= source_beginning < map_source_end:
+        dest_beginning = source_beginning + offset
+    if map_source_start <= source_end < map_source_end:
+        dest_end = source_end + offset
+    if dest_beginning and dest_end:  # source is entirely in the map
+        return {"mapped": [(dest_beginning, dest_end)]}
+    if not (dest_beginning or dest_end):  # not mapped
+        return {"unmapped": [(source_beginning, source_end)]}
+    else:  # new ranges
+        if dest_beginning:
+            return {
+                "mapped": [(dest_beginning, map_source_end)],
+                "unmapped": [(map_source_end + 1, source_end)],
+            }
+        if dest_end:
+            return {
+                "unmapped": [(source_beginning, map_source_start)],
+                "mapped": [(map_dest_start, dest_end)],
+            }
+    raise ValueError
+
+
 def solve_part_two(input_data):
     """Solve part two.
 
@@ -147,8 +193,13 @@ def solve_part_two(input_data):
 
     Now, rather than considering four seed numbers, you need to consider a total of 27 seed numbers.
     """
-    # seeds, maps = input_data
+    seeds, maps = input_data
     seeds = list(map(int, seeds.split(":")[1].strip(" ").split(" ")))
+
+    seed_ranges = []
+    for index in range(0, len(seeds), 2):
+        seed_ranges.append((seeds[index], seeds[index] + seeds[index + 1]))
+
     # seed_values = []
     # for i in range(0, math.floor((len(seeds) / 2)), 2):
     #     for s in range(seeds[i], seeds[i] + seeds[i + 1]):
@@ -174,24 +225,20 @@ def solve_part_two(input_data):
     # return answer
     # Start with this end location as being too low
 
-    current_location = 1000000
+    # current_location = 1000000
 
-    def lookup_next_val(current_value, maps):
-        for dest, source, map_range in maps:
-            if source <= current_value < source + map_range:
-                offset = current_value - source
-                return offset + dest
-        return current_value
-
-    seed_ranges = []
-    for i in range(0, math.floor((len(seeds) / 2)), 2):
-        seed_ranges.append((seeds[i], seeds[i] + seeds[i + 1]))
-
-    maps = reversed(maps)
-    iter = 0
-    while iter < 100000000:
-        iter += 1
-        current_location += 1
+    # I read a clue on subreddit where someone mentioned using ranges
+    # The idea is that each map can generate a list of ranges.
+    # After performing all maps, find the lowest start value
+    ranges = seed_ranges
+    for step, mappings in enumerate(maps):
+        print(f"{step}: {len(ranges)} ranges")
+        new_ranges = []
+        for source_range in ranges:
+            for map_entry in mappings:
+                ret = get_map_range(source_range, map_entry)
+                if ret["mapped"]:
+                    new_ranges.extend(ret["mapped"])
 
 
 def main():

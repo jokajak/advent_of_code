@@ -5,7 +5,13 @@ import pytest
 
 # Third party imports
 from aocd.models import Puzzle
-from aoc.y2023.d05 import parse, solve_part_one, solve_part_two, parse_map
+from aoc.y2023.d05 import (
+    parse,
+    solve_part_one,
+    solve_part_two,
+    parse_map,
+    get_map_range,
+)
 
 
 @pytest.fixture
@@ -47,4 +53,29 @@ def test_part2(example_data):
     ret = solve_part_two(parse(example_data))
     if expected is None:
         pytest.skip("Not yet implemented")
+    assert ret == expected
+
+
+@pytest.mark.parametrize(
+    "input_range, map_values, expected",
+    [
+        (
+            (79, 93),
+            (52, 50, 48),
+            [(81, 95)],
+        ),
+        (
+            (11, 20),
+            (1, 5, 10),
+            [(7, 15), (16, 20)],
+        ),
+        (
+            (11, 20),
+            (1, 5, 2),
+            [(11, 20)],
+        ),
+    ],
+)
+def test_get_map_range(input_range, map_values, expected):
+    ret = get_map_range(input_range, map_values)
     assert ret == expected
