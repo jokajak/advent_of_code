@@ -34,7 +34,17 @@ def test_part1(example_data):
 
 def test_part2(example_data):
     """Test part 2 on example input"""
-    expected = None
+    example_data = """LR
+
+11A = (11B, XXX)
+11B = (XXX, 11Z)
+11Z = (11B, XXX)
+22A = (22B, XXX)
+22B = (22C, 22C)
+22C = (22Z, 22Z)
+22Z = (22B, 22B)
+XXX = (XXX, XXX)"""
+    expected = 6
     ret = solve_part_two(parse(example_data))
     if expected is None:
         pytest.skip("Not yet implemented")
