@@ -120,22 +120,22 @@ def solve_part_one(input_data):
     seed_values = [int(seed) for seed in seeds]
     seed_paths = defaultdict(list)
     for seed_index, seed in enumerate(seed_values):
-        print(f"Getting seed location: {seed}")
+        # print(f"Getting seed location: {seed}")
         for map_entry in maps:
             seed_paths[seed_index].append(seed_values[seed_index])
             seed_values[seed_index] = lookup_next_val(
                 seed_values[seed_index], map_entry
             )
-            print(f"Seed value: {seed_values[seed_index]}")
-        print(f"Location: {seed_values[seed_index]}")
+            # print(f"Seed value: {seed_values[seed_index]}")
+        # print(f"Location: {seed_values[seed_index]}")
     print_paths(seed_paths)
-    min_value, min_index = min((val, idx) for idx, val in enumerate(seed_values))
+    min_value, _ = min((val, idx) for idx, val in enumerate(seed_values))
     answer = min_value
     return answer
 
 
-def get_map_range(input_range, map_values):
-    """Given an input range, return the results of the map.
+def get_map_range(input_range, map_ranges):
+    """Given an input range, return the results of applying all the maps
 
     For example:
 
@@ -149,34 +149,52 @@ def get_map_range(input_range, map_values):
     Therefore it returns a dictionary of:
     mapped:
     unmapped:
+    Really I need to just map the entire input range across all possible mapping ranges
     """
     source_beginning, source_end = input_range
-    dest_beginning = dest_end = None
-    map_dest_start, map_source_start, count = map_values
-    map_dest_end, map_source_end = map_dest_start + count, map_source_start + count
-    offset = map_dest_start - map_source_start
-    # if the start is within range, then we have a new start
-    # if the end is within range, then we have a new end
-    if map_source_start <= source_beginning < map_source_end:
-        dest_beginning = source_beginning + offset
-    if map_source_start <= source_end < map_source_end:
-        dest_end = source_end + offset
-    if dest_beginning and dest_end:  # source is entirely in the map
-        return {"mapped": [(dest_beginning, dest_end)]}
-    if not (dest_beginning or dest_end):  # not mapped
-        return {"unmapped": [(source_beginning, source_end)]}
-    else:  # new ranges
-        if dest_beginning:
-            return {
-                "mapped": [(dest_beginning, map_source_end)],
-                "unmapped": [(map_source_end + 1, source_end)],
-            }
-        if dest_end:
-            return {
-                "unmapped": [(source_beginning, map_source_start)],
-                "mapped": [(map_dest_start, dest_end)],
-            }
-    raise ValueError
+    ret = []
+    for map_values in map_ranges:
+        dest_beginning = dest_end = None
+        map_dest_start, map_source_start, count = map_values
+        map_dest_end, map_source_end = map_dest_start + count, map_source_start + count
+        offset = map_dest_start - map_source_start
+        assert offset == map_dest_end - map_source_end
+        # if the start is within range, then we have a new start
+        # if the end is within range, then we have a new end
+        if map_source_start <= source_beginning < map_source_end:
+            dest_beginning = source_beginning + offset
+        if map_source_start <= source_end < map_source_end:
+            dest_end = source_end + offset
+        if dest_beginning == 0:
+            print(f"Bad value: {input_range} {map_values}")
+            print(f"{map_dest_end} {map_source_end} {offset}")
+            print(f"{dest_beginning} {dest_end}")
+            raise ValueError
+        if dest_beginning and dest_end:  # source is entirely in the map
+            ret.append((dest_beginning, dest_end))
+            break  # can only be mapped once
+        if not (dest_beginning or dest_end):  # not mapped
+            continue
+        else:  # new ranges
+            if dest_beginning:
+                assert dest_beginning != 0
+                ret.append((dest_beginning, map_source_end))
+                # update the values that are considered for mapping
+                source_beginning = map_source_end + 1
+            if dest_end:
+                print(f"{input_range}: {map_values} offset: {offset}")
+                print(f"{map_source_start} <= {source_end} < {map_source_end}")
+                assert map_dest_start != 0
+                ret.append((map_dest_start, dest_end))
+                source_end = map_source_start
+    else:
+        ret.append((source_beginning, source_end))
+    for output_range in ret:
+        if output_range[0] == 0:
+            print(f"Bad value: {ret}")
+            print(f"{input_range}")
+        assert output_range[0] != 0
+    return ret
 
 
 def solve_part_two(input_data):
@@ -232,13 +250,15 @@ def solve_part_two(input_data):
     # After performing all maps, find the lowest start value
     ranges = seed_ranges
     for step, mappings in enumerate(maps):
-        print(f"{step}: {len(ranges)} ranges")
+        print(f"{step}: {len(ranges)} ranges: {ranges}")
         new_ranges = []
         for source_range in ranges:
-            for map_entry in mappings:
-                ret = get_map_range(source_range, map_entry)
-                if ret["mapped"]:
-                    new_ranges.extend(ret["mapped"])
+            new_ranges.extend(get_map_range(source_range, mappings))
+        ranges = new_ranges
+
+    answer = min(ranges, key=lambda x: x[0])[0]
+
+    return answer
 
 
 def main():
