@@ -186,9 +186,176 @@ def solve_part_one(input_data, start_coordinate=None):
     return answer
 
 
-def solve_part_two(input_data):
-    """Solve part two."""
-    answer = None
+def area_by_shoelace(x, y):
+    """Assumes x,y points go around the polygon in one direction.
+
+    From https://rosettacode.org/wiki/Shoelace_formula_for_polygonal_area#Python
+    """
+    return (
+        abs(
+            sum(i * j for i, j in zip(x, y[1:] + y[:1]))
+            - sum(i * j for i, j in zip(x[1:] + x[:1], y))
+        )
+        / 2
+    )
+
+
+def solve_part_two_with_shoelace(input_data, start_coordinate):
+    input_data[start_coordinate] = get_start_pipe(input_data, start_coordinate)
+    neighbors = get_map_neighbors(input_data)
+    # walk both directions along the loop
+    iters = 1
+    max_iters = 10**5
+    left_node, right_node = neighbors[start_coordinate]
+    previous_left_node, previous_right_node = start_coordinate, start_coordinate
+    path_coordinates = {
+        "x": [start_coordinate[0]],
+        "y": [start_coordinate[1]],
+    }
+    # I can traverse both directions from start until they meet
+    while iters < max_iters:
+        iters += 1
+        left_node, previous_left_node = get_next_node(
+            input_data, left_node, previous_left_node
+        )
+        if input_data[left_node] in ("J", "7", "F", "L"):
+            path_coordinates["x"].append(left_node[0])
+            path_coordinates["y"].append(left_node[1])
+        right_node, previous_right_node = get_next_node(
+            input_data, right_node, previous_right_node
+        )
+        if left_node == right_node:
+            break
+        if input_data[right_node] in ("J", "7", "F", "L"):
+            path_coordinates["x"].insert(0, right_node[0])
+            path_coordinates["y"].insert(0, right_node[1])
+
+    print(path_coordinates)
+    answer = area_by_shoelace(path_coordinates["x"], path_coordinates["y"])
+    return answer
+
+
+def solve_part_two(input_data, start_coordinate=None):
+    """Solve part two.
+
+    Find the number of nodes contained within the loop
+
+    To determine whether it's even worth taking the time to search for such a nest, you should calculate how many tiles
+    are contained within the loop. For example:
+
+    ...........
+    .S-------7.
+    .|F-----7|.
+    .||.....||.
+    .||.....||.
+    .|L-7.F-J|.
+    .|..|.|..|.
+    .L--J.L--J.
+    ...........
+
+    The above loop encloses merely four tiles - the two pairs of . in the southwest and southeast (marked I below). The
+    middle . tiles (marked O below) are not in the loop. Here is the same loop again with those regions marked:
+
+    ...........
+    .S-------7.
+    .|F-----7|.
+    .||OOOOO||.
+    .||OOOOO||.
+    .|L-7OF-J|.
+    .|II|O|II|.
+    .L--JOL--J.
+    .....O.....
+
+    According to ChatGPT, the Shoelace formula can be used to find the area of a general polygon.
+    https://en.wikipedia.org/wiki/Shoelace_formula
+
+    It requires finding the coordinates of the corners.
+
+    https://rosettacode.org/wiki/Shoelace_formula_for_polygonal_area#Python
+
+    Turns out this method won't work because it just doesn't.
+
+    Instead I can use the point in polygon algorithm: https://en.wikipedia.org/wiki/Point_in_polygon
+    Thanks ChatGPT!
+    """
+    answer = 0
+    # get the start coordinate
+    for coordinate, pipe in input_data.items():
+        if pipe == "S":
+            start_coordinate = coordinate
+            break
+    else:
+        if not start_coordinate:
+            print("Could not find a start coordinate")
+            print(input_data)
+            raise ValueError
+
+    # to apply the point in polygon formula, I need to find a bounding box for the polygon
+    input_data[start_coordinate] = get_start_pipe(input_data, start_coordinate)
+    neighbors = get_map_neighbors(input_data)
+    # walk both directions along the loop
+    iters = 1
+    max_iters = 10**5
+    left_node, right_node = neighbors[start_coordinate]
+    previous_left_node, previous_right_node = start_coordinate, start_coordinate
+    path_coordinates = {
+        "x": [start_coordinate[0]],
+        "y": [start_coordinate[1]],
+    }
+    path_nodes = []
+    # I can traverse both directions from start until they meet
+    while iters < max_iters:
+        iters += 1
+        left_node, previous_left_node = get_next_node(
+            input_data, left_node, previous_left_node
+        )
+        if input_data[left_node] in ("J", "7", "F", "L"):
+            if left_node not in path_nodes:
+                path_nodes.append(left_node)
+                path_coordinates["x"].append(left_node[0])
+                path_coordinates["y"].append(left_node[1])
+        right_node, previous_right_node = get_next_node(
+            input_data, right_node, previous_right_node
+        )
+        if input_data[right_node] in ("J", "7", "F", "L"):
+            if right_node not in path_nodes:
+                path_nodes.append(right_node)
+                path_coordinates["x"].insert(0, right_node[0])
+                path_coordinates["y"].insert(0, right_node[1])
+        print(f"{left_node} {right_node}")
+        if left_node == right_node:
+            break
+    min_x, max_x = min(path_coordinates["x"]), max(path_coordinates["x"])
+    min_y, max_y = min(path_coordinates["y"]), max(path_coordinates["y"])
+    answer = 0
+
+    def is_point_inside_polygon(x, y, poly_x, poly_y):
+        n = len(poly_x)
+        odd_nodes = False
+
+        j = n - 1
+        for i in range(n):
+            if (poly_y[i] < y and poly_y[j] >= y) or (poly_y[j] < y and poly_y[i] >= y):
+                if (
+                    poly_x[i]
+                    + (y - poly_y[i])
+                    / (poly_y[j] - poly_y[i])
+                    * (poly_x[j] - poly_x[i])
+                    < x
+                ):
+                    odd_nodes = not odd_nodes
+            j = i
+
+        return odd_nodes
+
+    print(f"{path_coordinates}")
+    for x in range(min_x, max_x + 1):
+        for y in range(min_y, max_y + 1):
+            if is_point_inside_polygon(
+                x, y, path_coordinates["x"], path_coordinates["y"]
+            ):
+                print(f"({x}, {y}) is in the polygon")
+                answer += 1
     return answer
 
 

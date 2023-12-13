@@ -28,6 +28,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 add_day = "aoc.scripts.add_day:main"
+run_day = "aoc.scripts.run_day:main"
 generate_readme = "aoc.scripts.generate_readme:main"
 
 [tool.pytest.ini_options]

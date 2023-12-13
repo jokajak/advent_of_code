@@ -8,7 +8,7 @@ import argparse
 def run_script(year, day, run_test=False):
     # Construct the path for the script and test file
     script_path = f"./src/aoc/y{year}/d{day}.py"
-    test_path = f"./src/aoc/tests/y{year}/test_d{day}.py"
+    test_path = f"./src/aoc/tests/y{year}/test_{day}.py"
 
     # Check if --test is provided and the test file exists
     if run_test and os.path.exists(test_path):

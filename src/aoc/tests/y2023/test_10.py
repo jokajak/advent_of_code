@@ -32,9 +32,69 @@ def test_part1(example_data):
     assert ret == expected
 
 
-def test_part2(example_data):
+@pytest.mark.parametrize(
+    "example_data, expected",
+    [
+        (
+            """....
+.S7.
+.LJ.
+....""",
+            0,
+        ),
+        (
+            """....
+.S7.
+.||.
+.LJ.
+....""",
+            0,
+        ),
+        (
+            """....
+.S-7.
+.|.|.
+.L-J.
+....""",
+            1,
+        ),
+        (
+            """.....
+.S--7.
+.|..|.
+.L--J.
+.....""",
+            2,
+        ),
+        (
+            """..........
+.S------7.
+.|F----7|.
+.||OOOO||.
+.||OOOO||.
+.|L-7F-J|.
+.|..||..|.
+.L--JL--J.
+..........
+""",
+            4,
+        ),
+        (
+            """...........
+.S-------7.
+.|F-----7|.
+.||.....||.
+.||.....||.
+.|L-7OF-J|.
+.|..|O|..|.
+.L--JOL--J.
+.....O.....""",
+            4,
+        ),
+    ],
+)
+def test_part2(example_data, expected):
     """Test part 2 on example input"""
-    expected = None
     ret = solve_part_two(parse(example_data))
     if expected is None:
         pytest.skip("Not yet implemented")
