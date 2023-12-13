@@ -38,6 +38,11 @@ def expand_graph(input_data, expansion_rate=1):
     Due to something involving gravitational effects, only some space expands. In fact, the result is that any rows or
     columns that contain no galaxies should all actually be twice as big.
     """
+
+    # I don't understand this
+    # but it works per https://www.reddit.com/r/adventofcode/comments/18fzv4k/2023_day_11_part_2_how_to_approach_the_challenge/
+    if expansion_rate > 1:
+        expansion_rate -= 1
     row_offset = column_offset = 0
     populated_columns = set()
     populated_rows = input_data.keys()
