@@ -292,6 +292,8 @@ def solve_part_two(input_data, start_coordinate=None):
 
     # to apply the point in polygon formula, I need to find a bounding box for the polygon
     input_data[start_coordinate] = get_start_pipe(input_data, start_coordinate)
+    print(start_coordinate)
+    print(input_data[start_coordinate])
     neighbors = get_map_neighbors(input_data)
     # walk both directions along the loop
     iters = 1
@@ -302,6 +304,7 @@ def solve_part_two(input_data, start_coordinate=None):
         "x": [start_coordinate[0]],
         "y": [start_coordinate[1]],
     }
+    path_corners = []
     path_nodes = []
     # I can traverse both directions from start until they meet
     while iters < max_iters:
@@ -310,24 +313,59 @@ def solve_part_two(input_data, start_coordinate=None):
             input_data, left_node, previous_left_node
         )
         if input_data[left_node] in ("J", "7", "F", "L"):
-            if left_node not in path_nodes:
-                path_nodes.append(left_node)
+            if left_node not in path_corners:
+                path_corners.append(left_node)
                 path_coordinates["x"].append(left_node[0])
                 path_coordinates["y"].append(left_node[1])
         right_node, previous_right_node = get_next_node(
             input_data, right_node, previous_right_node
         )
         if input_data[right_node] in ("J", "7", "F", "L"):
-            if right_node not in path_nodes:
-                path_nodes.append(right_node)
+            if right_node not in path_corners:
+                path_corners.append(right_node)
                 path_coordinates["x"].insert(0, right_node[0])
                 path_coordinates["y"].insert(0, right_node[1])
         print(f"{left_node} {right_node}")
         if left_node == right_node:
             break
+        path_nodes.append(left_node)
+        path_nodes.append(right_node)
     min_x, max_x = min(path_coordinates["x"]), max(path_coordinates["x"])
     min_y, max_y = min(path_coordinates["y"]), max(path_coordinates["y"])
     answer = 0
+
+    def is_point_in_path(x: int, y: int, poly: list[tuple[int, int]]) -> bool:
+        """Determine if the point is on the path, corner, or boundary of the polygon
+
+        Args:
+          x -- The x coordinates of point.
+          y -- The y coordinates of point.
+          poly -- a list of tuples [(x, y), (x, y), ...]
+
+        Returns:
+          True if the point is in the path or is a corner or on the boundary
+
+        From https://en.wikipedia.org/wiki/Even%E2%80%93odd_rule
+
+        """
+        num = len(poly)
+        j = num - 1
+        c = False
+        for i in range(num):
+            if (x == poly[i][0]) and (y == poly[i][1]):
+                # point is a corner
+                return True
+            if (poly[i][1] > y) != (poly[j][1] > y):
+                slope = (x - poly[i][0]) * (poly[j][1] - poly[i][1]) - (
+                    poly[j][0] - poly[i][0]
+                ) * (y - poly[i][1])
+                if slope == 0:
+                    # point is on boundary
+                    return True
+                if (slope < 0) != (poly[j][1] < poly[i][1]):
+                    c = not c
+            j = i
+        return c
 
     def is_point_inside_polygon(x, y, poly_x, poly_y):
         n = len(poly_x)
@@ -349,13 +387,17 @@ def solve_part_two(input_data, start_coordinate=None):
         return odd_nodes
 
     print(f"{path_coordinates}")
+    print(f"{path_nodes}")
     for x in range(min_x, max_x + 1):
         for y in range(min_y, max_y + 1):
             if is_point_inside_polygon(
                 x, y, path_coordinates["x"], path_coordinates["y"]
             ):
-                print(f"({x}, {y}) is in the polygon")
-                answer += 1
+                if (x, y) in path_nodes or (x, y) in path_corners:
+                    print(f"({x}, {y}) is on the path, not counting")
+                else:
+                    print(f"({x}, {y}) is in the polygon")
+                    answer += 1
     return answer
 
 
