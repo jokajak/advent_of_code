@@ -6,7 +6,7 @@
 from aocd.models import Puzzle, default_user
 from rich import print
 from rich.progress import track
-from collections import defaultdict
+from collections import defaultdict, deque
 import math
 from typing import List, Tuple
 
@@ -149,51 +149,90 @@ def get_map_range(input_range, map_ranges):
     Therefore it returns a dictionary of:
     mapped:
     unmapped:
-    Really I need to just map the entire input range across all possible mapping ranges
+    Really I need to just map the entire input range across all possible seed_ranges, mappings ranges
+
+    https://github.com/mebeim/aoc/blob/master/2023/README.md#day-5---if-you-give-a-seed-a-fertilizer
+
+    This has a great write up for the logic that fails to be implemented below.
+
+    A key thing I missed is that I need to pass the range through all of the mappings, not just once
+
+
+    (1) Complete           (2) Partial inner
+
+        AxxxB              A----xxx----B
+    C----xxx----D              CxxxD
+
+    (3) Partial right      (4) Partial left
+
+    A----xxxB                  Axxx----B
+        Cxxx----D          C----xxxD
     """
-    source_beginning, source_end = input_range
+    segments = [input_range]
     ret = []
-    for map_values in map_ranges:
-        dest_beginning = dest_end = None
-        map_dest_start, map_source_start, count = map_values
-        map_dest_end, map_source_end = map_dest_start + count, map_source_start + count
-        offset = map_dest_start - map_source_start
-        assert offset == map_dest_end - map_source_end
-        # if the start is within range, then we have a new start
-        # if the end is within range, then we have a new end
-        if map_source_start <= source_beginning < map_source_end:
-            dest_beginning = source_beginning + offset
-        if map_source_start <= source_end < map_source_end:
-            dest_end = source_end + offset
-        if dest_beginning == 0:
-            print(f"Bad value: {input_range} {map_values}")
-            print(f"{map_dest_end} {map_source_end} {offset}")
-            print(f"{dest_beginning} {dest_end}")
-            raise ValueError
-        if dest_beginning and dest_end:  # source is entirely in the map
-            ret.append((dest_beginning, dest_end))
-            break  # can only be mapped once
-        if not (dest_beginning or dest_end):  # not mapped
-            continue
-        else:  # new ranges
-            if dest_beginning:
-                assert dest_beginning != 0
-                ret.append((dest_beginning, map_source_end))
-                # update the values that are considered for mapping
-                source_beginning = map_source_end + 1
-            if dest_end:
-                print(f"{input_range}: {map_values} offset: {offset}")
-                print(f"{map_source_start} <= {source_end} < {map_source_end}")
-                assert map_dest_start != 0
-                ret.append((map_dest_start, dest_end))
-                source_end = map_source_start
-    else:
-        ret.append((source_beginning, source_end))
-    for output_range in ret:
-        if output_range[0] == 0:
-            print(f"Bad value: {ret}")
-            print(f"{input_range}")
-        assert output_range[0] != 0
+    max_iter = 10**2
+    iter = 0
+
+    while segments and iter < max_iter:
+        source_beginning, source_end = segments.pop(0)
+
+        for map_dest_start, map_source_start, count in map_ranges:
+            offset = map_dest_start - map_source_start
+            src_start, src_stop = (
+                map_source_start,
+                map_source_start + count,
+            )
+
+            partial_left = src_start <= source_beginning < src_stop
+            partial_right = src_start < source_end <= src_stop
+
+            if partial_left and partial_right:
+                # This covers the case of a full overlap
+                # (1) Complete
+                #
+                #     AxxxB
+                # C----xxx----D
+                ret.append((source_beginning + offset, source_end + offset))
+                # We break because there are no segments that can match
+                break
+            if partial_left:
+                # Only part of the range is overlapping
+                # (4) Partial left
+                #
+                #     Axxx----B
+                # C----xxxD
+                ret.append((source_beginning + offset, src_stop))
+                segments.append((src_stop, source_end))
+                # we break because this mapping has been processed
+                break
+
+            if partial_right:
+                # Only part of the range is overlapping
+                #
+                # (3) Partial right
+                #
+                # A----xxxB
+                #     Cxxx----D
+                ret.append((src_start + offset, source_end + offset))
+                segments.append((source_beginning, src_start))
+                # we break because this mapping has been processed
+                break
+
+            if source_beginning < src_start and src_stop < source_end:
+                # Partial inner, I didn't account for this one originally
+                #
+                # (2) Partial inner
+                #
+                # A----xxx----B
+                #     CxxxD
+                ret.append((src_start + offset, src_stop + offset))
+                segments.append((source_beginning, src_start))
+                segments.append((src_stop, source_end))
+                break
+        else:
+            # no overlap
+            ret.append((source_beginning, source_end))
+
     return ret
 
 
@@ -218,45 +257,78 @@ def solve_part_two(input_data):
     for index in range(0, len(seeds), 2):
         seed_ranges.append((seeds[index], seeds[index] + seeds[index + 1]))
 
-    # seed_values = []
-    # for i in range(0, math.floor((len(seeds) / 2)), 2):
-    #     for s in range(seeds[i], seeds[i] + seeds[i + 1]):
-    #         seed_values.append(s)
-    # This approach technically works but is too slow (>24 hours)
-    # print(len(seed_values)) -> 926074368
-    # that number is too many to iterate through the full map
-    # can I calculate the value of the location formulaicly?
-    # I feel like I should be able to use the fact that if a number isn't specifically mapped it is itself
-    # I read a clue on reddit to map from the location back to an input and start from 0
-    # for seed_index in track(range(len(seed_values))):
-    #     # print(f"Getting seed location: {seed_values[seed_index]}")
-    #     for map_entry in maps:
-    #         seed_paths[seed_index].append(seed_values[seed_index])
-    #         seed_values[seed_index] = lookup_next_val(
-    #             seed_values[seed_index], map_entry
-    #         )
-    #         # print(f"Seed value: {seed_values[seed_index]}")
-    #     # print(f"Location: {seed_values[seed_index]}")
-    # print_paths(seed_paths)
-    # min_value, min_index = min((val, idx) for idx, val in enumerate(seed_values))
-    # answer = min_value
-    # return answer
-    # Start with this end location as being too low
+    source_based_maps = []
+    for mappings in maps:
+        mapping = []
+        for dst, src, length in mappings:
+            mapping.append((src, src + length, dst - src))
+        source_based_maps.append(mapping)
 
-    # current_location = 1000000
+    mappings = source_based_maps
 
-    # I read a clue on subreddit where someone mentioned using ranges
-    # The idea is that each map can generate a list of ranges.
-    # After performing all maps, find the lowest start value
-    ranges = seed_ranges
-    for step, mappings in enumerate(maps):
-        print(f"{step}: {len(ranges)} ranges: {ranges}")
-        new_ranges = []
-        for source_range in ranges:
-            new_ranges.extend(get_map_range(source_range, mappings))
-        ranges = new_ranges
+    def solve(segments, mappings):
+        for mapping in mappings:
+            processed = deque()
 
-    answer = min(ranges, key=lambda x: x[0])[0]
+            while segments:
+                start, end = segments.popleft()
+
+                for range_start, range_end, offset in mapping:
+                    partial_left = range_start <= start < range_end
+                    partial_right = range_start < end <= range_end
+
+                    if partial_left and partial_right:
+                        # This covers the case of a full overlap
+                        # (1) Complete
+                        #
+                        #     AxxxB
+                        # C----xxx----D
+                        processed.append((start + offset, end + offset))
+                        # We break because there are no segments that can match
+                        break
+
+                    if partial_left:
+                        # Only part of the range is overlapping
+                        # (4) Partial left
+                        #
+                        #     Axxx----B
+                        # C----xxxD
+                        processed.append((start + offset, range_end + offset))
+                        segments.append((range_end, end))
+                        # we break because this mapping has been processed
+                        break
+
+                    if partial_right:
+                        # Only part of the range is overlapping
+                        #
+                        # (3) Partial right
+                        #
+                        # A----xxxB
+                        #     Cxxx----D
+                        processed.append((range_start + offset, end + offset))
+                        segments.append((start, range_start))
+                        # we break because this mapping has been processed
+                        break
+
+                    if start < range_start and end > range_end:
+                        # Partial inner, I didn't account for this one originally
+                        #
+                        # (2) Partial inner
+                        #
+                        # A----xxx----B
+                        #     CxxxD
+                        processed.append((range_start + offset, range_end + offset))
+                        segments.append((start, range_start))
+                        segments.append((range_end, end))
+                        break
+                else:
+                    # no overlap
+                    processed.append((start, end))
+
+            segments = processed
+        return min(s[0] for s in segments)
+
+    answer = solve(deque(seed_ranges), mappings)
 
     return answer
 
