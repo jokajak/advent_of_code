@@ -53,11 +53,11 @@ def parse(input_data):
 map_neighbors = None
 
 
-def get_map_neighbors(map_data):
+def get_map_neighbors(map_data, start_node=None):
     """Precalculate all neighbors"""
     neighbors = {}
     global map_neighbors
-    if map_neighbors:
+    if map_neighbors and start_node in map_neighbors:
         return map_neighbors
     nodes_to_consider = map_data.items()
 
@@ -294,7 +294,7 @@ def solve_part_two(input_data, start_coordinate=None):
     input_data[start_coordinate] = get_start_pipe(input_data, start_coordinate)
     print(start_coordinate)
     print(input_data[start_coordinate])
-    neighbors = get_map_neighbors(input_data)
+    neighbors = get_map_neighbors(input_data, start_node=start_coordinate)
     # walk both directions along the loop
     iters = 1
     max_iters = 10**5
@@ -390,9 +390,7 @@ def solve_part_two(input_data, start_coordinate=None):
     print(f"{path_nodes}")
     for x in range(min_x, max_x + 1):
         for y in range(min_y, max_y + 1):
-            if is_point_inside_polygon(
-                x, y, path_coordinates["x"], path_coordinates["y"]
-            ):
+            if is_point_in_path(x, y, path_nodes):
                 if (x, y) in path_nodes or (x, y) in path_corners:
                     print(f"({x}, {y}) is on the path, not counting")
                 else:
