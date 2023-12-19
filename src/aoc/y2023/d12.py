@@ -8,14 +8,36 @@ from rich import print
 
 
 def parse(input_data):
-    """Transform the data"""
+    """Transform the data."""
+    parsed_data = []
+    for line in input_data.splitlines():
+        parsed_data.append(line.split())
     return input_data
+
+
+def valid_arrangements(row, conditions):
+    """Return the number of valid arrangements for a given row."""
+    count = 1
+    if not row.contains("?"):
+        return count
+    conditions = conditions.split(",")
+    return
 
 
 def solve_part_one(input_data):
     """Solve part one.
 
-    
+    In this example, the number of possible arrangements for each row is:
+
+    ???.### 1,1,3 - 1 arrangement
+    .??..??...?##. 1,1,3 - 4 arrangements
+    ?#?#?#?#?#?#?#? 1,3,1,6 - 1 arrangement
+    ????.#...#... 4,1,1 - 1 arrangement
+    ????.######..#####. 1,6,5 - 4 arrangements
+    ?###???????? 3,2,1 - 10 arrangements
+
+    For each row, count all of the different arrangements of operational and broken springs that meet the given
+    criteria. What is the sum of those counts?
     """
     answer = None
     return answer
