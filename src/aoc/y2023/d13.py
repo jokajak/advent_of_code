@@ -107,7 +107,10 @@ def solve_part_one(input_data):
 
 
 def solve_part_two(input_data):
-    """Solve part two."""
+    """Solve part two.
+
+    In part 2, I have to change just one character in each graph to get a new reflection line.
+    """
     answer = None
     return answer
 
