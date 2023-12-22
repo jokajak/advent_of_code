@@ -51,25 +51,73 @@ def test_cycles(example_data):
 ......OOOO
 #...O###..
 #..OO#...."""
-    print(expected)
-    expected = "".join(expected.splitlines())
+    expected_graph = parse(expected)
     graph = parse(example_data)
-    print_graph(graph)
     graph = tilt_graph(graph, delta_x=0, delta_y=-1)
-    print_graph(graph)
     graph = tilt_graph(graph, delta_x=-1, delta_y=0)
-    print_graph(graph)
     graph = tilt_graph(graph, delta_x=0, delta_y=1)
-    print_graph(graph)
     graph = tilt_graph(graph, delta_x=1, delta_y=0)
+    print("Final graph then expected")
+    print(hash_graph(graph))
+    print(hash_graph(expected_graph))
+    print(hash_graph(graph.graph))
+    print(hash_graph(expected_graph.graph))
     print_graph(graph)
-    assert hash_graph(graph.graph) == expected
+    print_graph(expected_graph)
+    assert hash_graph(graph) == hash_graph(expected_graph)
+
+
+def test_cycle(example_data):
+    expected = """.....#....
+....#...O#
+...OO##...
+.OO#......
+.....OOO#.
+.O#...O#.#
+....O#....
+......OOOO
+#...O###..
+#..OO#...."""
+    graph = parse(example_data)
+    graph = run_cycle(graph)
+    assert hash_graph(graph) == hash_graph(parse(expected))
+    graph = run_cycle(graph)
+    expected_2 = """.....#....
+....#...O#
+.....##...
+..O#......
+.....OOO#.
+.O#...O#.#
+....O#...O
+.......OOO
+#..OO###..
+#.OOO#...O"""
+    assert hash_graph(graph) == hash_graph(parse(expected_2))
+    graph = run_cycle(graph)
+    expected_3 = """.....#....
+....#...O#
+.....##...
+..O#......
+.....OOO#.
+.O#...O#.#
+....O#...O
+.......OOO
+#...O###.O
+#.OOO#...O"""
+    print("cycle 3")
+    print_graph(graph)
+    print("expected")
+    print_graph(parse(expected_3))
+    assert hash_graph(graph) == hash_graph(parse(expected_3))
 
 
 def test_part2(example_data):
     """Test part 2 on example input"""
     expected = 64
-    ret = solve_part_two(parse(example_data), cycles=20)
+    ret = solve_part_two(
+        parse(example_data),
+        cycles=1000,
+    )
     if expected is None:
         pytest.skip("Not yet implemented")
     assert ret == expected

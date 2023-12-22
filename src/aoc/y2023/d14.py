@@ -33,7 +33,7 @@ def parse(input_data):
     #....###..
     #OO..#....
     """
-    print(input_data)
+    # print(input_data)
     reversed_graph = defaultdict(dict)
     rock_spots = {}
     for row_index, line in enumerate(input_data.split()):
@@ -70,7 +70,12 @@ def get_load(graph):
 
     ret = 0
 
-    total_rows = max(graph.keys())
+    if isinstance(graph, Graph):
+        total_rows = graph.height
+        graph = graph.graph
+        assert total_rows == max(graph.keys()) + 1
+    else:
+        total_rows = max(graph.keys())
     for row_index, row in graph.items():
         for column_index, char in row.items():
             if char == "O":
@@ -150,7 +155,7 @@ def print_graph(graph):
         row = graph.get(row_index, {})
         out_line = []
         last_col = width
-        for col in range(last_col + 1):
+        for col in range(last_col):
             out_line.append(row.get(col, "."))
         out_line = "".join(out_line)
         out_line = f"{out_line} :{row_index}"
@@ -162,10 +167,17 @@ def print_graph(graph):
 def hash_graph(graph):
     """Hash a graph"""
     out = []
-    for row_index, row in graph.items():
+    if isinstance(graph, Graph):
+        last_col = graph.width
+        height = graph.height
+        graph = graph.graph
+    else:
+        last_col = len(graph[0])
+        height = len(graph)
+    for row_index in range(height):
+        row = graph.get(row_index, {})
         out_line = []
-        last_col = max(row.keys())
-        for col in range(last_col + 1):
+        for col in range(last_col):
             out_line.append(row.get(col, "."))
         out_line = "".join(out_line)
         out.append(out_line)
@@ -238,32 +250,48 @@ def solve_part_two(input_data, cycles=1000000000):
     seen_graphs = {}
     graph_loads = {}
     cycle_length = 0
+    iteration_hashes = {}
+    min_repeating = None
 
     for iteration in track(range(cycles)):
         graph = run_cycle(graph)
         # This repeats every 10, I don't know why
-        graph_hash = hash_graph(graph.graph)
+        graph_hash = hash_graph(graph)
         if graph_hash not in seen_graphs:
             seen_graphs[graph_hash] = [iteration]
-            graph_loads[graph_hash] = get_load(graph.graph)
-            graph_loads[iteration] = get_load(graph.graph)
+            graph_loads[graph_hash] = graph_loads[iteration] = get_load(graph.graph)
+            iteration_hashes[iteration] = graph_hash
         else:
             seen_graphs[graph_hash].append(iteration)
-            if len(seen_graphs[graph_hash]) == 3:
-                cycle_length = iteration - seen_graphs[graph_hash][1]
+            if len(seen_graphs[graph_hash]) == 2 and not min_repeating:
+                cycle_length = iteration - seen_graphs[graph_hash][0]
+                min_repeating = seen_graphs[graph_hash][0]
+                cycle_start = min_repeating
+                cycle_len = iteration - cycle_start
+                assert cycle_length == cycle_len
                 break
-    min_repeating = cycles
-    for hash_value, repeating_iterations in seen_graphs.items():
-        if len(repeating_iterations) >= 2:
-            min_repeating = min(min_repeating, min(repeating_iterations))
-            print(f"{repeating_iterations}: {graph_loads[hash_value]}")
+        if min_repeating:
+            remaining = iteration - min_repeating
+            prev = remaining % cycle_length + min_repeating
+            assert iteration_hashes[prev] == graph_hash
+    # min_repeating = cycles
+    # for hash_value, repeating_iterations in seen_graphs.items():
+    #     if len(repeating_iterations) >= 2:
+    #         min_repeating = min(min_repeating, min(repeating_iterations))
+    #         print(f"{repeating_iterations}: {graph_loads[hash_value]}")
 
-    graph_value = (cycles - min_repeating) % cycle_length + min_repeating
+    # cycle_start = min_repeating
+    # cycle_len = iteration - cycle_start
+    # remaining = cycles - cycle_start
+    # final = remaining % cycle_len + cycle_start - 1
+    # print(f"{cycle_len} == {cycle_length}")
+    # assert cycle_len == cycle_length
+
+    graph_value = (cycles - min_repeating - 1) % cycle_length + min_repeating
     print(
         f"({cycles} - {min_repeating}) % {cycle_length} + {min_repeating} = {graph_value}"
     )
     print(f"graph load: {graph_loads[graph_value]}")
-    print_graph(graph)
 
     answer = graph_loads[graph_value]
     return answer
