@@ -101,19 +101,24 @@ def solve_part_one(input_data):
 
 def get_approved_paths(workflows):
     max_iters = 10**100
-    valid_conditions = set()
-    target_conditions = deque("A")
+    valid_paths = []
+    target_conditions = deque()
+    target_conditions.append(("A", ["A"]))
     iters = 0
     while len(target_conditions) > 0 and iters < max_iters:
         iters += 1
         # get the condition we're trying to resolve
-        target_condition = target_conditions.popleft()
+        target_condition, path = target_conditions.popleft()
         for workflow, conditions in workflows.items():
             for condition, target in conditions:
                 if target == target_condition:
-                    valid_conditions.add(condition)
-                    target_conditions.append(workflow)
-    return valid_conditions
+                    new_path = list(path)
+                    new_path.append(condition)
+                    if workflow == "in":
+                        valid_paths.append(new_path)
+                    else:
+                        target_conditions.append((workflow, new_path))
+    return valid_paths
 
 
 def solve_part_two(input_data):
@@ -122,14 +127,11 @@ def solve_part_two(input_data):
     workflows, _ = input_data
     approved_paths = get_approved_paths(workflows)
 
-    valid_var_values = defaultdict(list)
-    for path in approved_paths:
-        if path == "True":
-            continue
-        var, op, value = path[0], path[1], int(path[2:])
-        valid_var_values[var].append((op, value))
+    approved_paths = [
+        [step for step in path if step not in ("True", "A")] for path in approved_paths
+    ]
 
-    print(valid_var_values)
+    print(approved_paths)
 
     return answer
 

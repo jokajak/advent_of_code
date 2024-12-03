@@ -22,12 +22,12 @@ The `add_day` script creates a file based on a 'solution day' template into the 
 
 Example:
 ```shell
-(venv) add_day 2015 14
+(venv) add_day --year 2015 --day 14
 ```
 
 Output:
 ```text
-(venv) [adventofcode] add-day 2015 14
+(venv) [adventofcode] add-day --year 2015 --day 14
 Creating solution day file for year 2015 day 14
 ```
 
